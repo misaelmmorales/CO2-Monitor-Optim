@@ -3,7 +3,8 @@ from uncertaintyMetric import *
 
 
 def  Uncertainty_calc(mc_data, synthetic_data, objs, err_option, eps, MeasureType, time_sensitivity, nLoc, verbose):   
-    print(' Calculating uncertainty reduction')
+    if verbose:
+        print(' Calculating uncertainty reduction')
     nObj = 1 # currently we only consider one obj
     
     array_shape = np.shape(synthetic_data)

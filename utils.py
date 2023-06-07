@@ -30,7 +30,7 @@ class proxy:
                  ncol_obj=50, tot_time=1800, nTime=60, nIntv=1, nTrain=500, nParam=4, nMCSamples=100000, nDataRealization=200,
                  xmin=[1e-19, 1e-19, 1e-19, 0.5], xmax=[1e-14, 1e-14, 1e-14, 2.0], error_option=3, time_sensitivity=1,
                  titles=['.', 'Pressure', 'CO2 Saturation (l)', 'Temperature', 'Pressure + CO2 Saturation'], 
-                 rom_val = 0, rom_obj=Earth(), rom_data=Earth(),
+                 rom_val=0, rom_obj=Earth(), rom_data=Earth(),
                  NN=False, verbose=False):
         self.nColumn_obj, self.nColumn_data = ncol_obj, [ncol_data]
         self.rom_obj, self.rom_data = rom_obj, rom_data
@@ -40,17 +40,21 @@ class proxy:
         self.x_min, self.x_max = xmin, xmax
         self.verbose, self.NN, self.seed = verbose, NN, 787878
         self.ROMs_validation, self.time_sensitivity, self.err_option = rom_val, time_sensitivity, error_option
+        # Load X, Y, Data
         self.training_data, self.raw_data, self.parameters = read_train_sim_results(self.Data_Directory, self.MeasureType, self.Obj_Filename, self.nColumn_obj, 
                                                                                     self.Total_time, self.nTimeSeries, self.nColumn_data, self.nInterval, 
                                                                                     self.nTrain, self.nParam, self.x_min, self.x_max, self.titles, self.verbose)
+        # Extract reuslts
         self.data_train, self.x_train, self.x_train_scaled, self.y_train, self.y_train_scaled = self.training_data
         self.data_train_read_raw, self.data_train_read_raw0                                   = self.raw_data
         self.eps, self.nData, self.time_point                                                 = self.parameters
+        # Train ROMS
         self.ROM_data, self.ROM_obj = rom_validation(self.ROMs_validation, self.rom_obj, self.rom_data, self.x_train_scaled, self.y_train, self.data_train, 
-                                                     self.nTrain, self.nData, self.data_train_read_raw, self.NN)
-        np.random.seed(self.seed)
-        self.mc_design = 2*np.random.rand(self.nMCSamples, self.nParam)-1
-        self.mc_data, self.mc_obj = evaluate_MC_with_ROM(self.ROM_data, self.ROM_obj, self.data_train_read_raw, self.mc_design, self.nData, self.nMCSamples)
+                                                     self.nTrain, self.nData, self.data_train_read_raw, self.NN, self.verbose)
+        # Evaluate ROMS with MC
+        np.random.seed(self.seed); self.mc_design = 2*np.random.rand(self.nMCSamples, self.nParam)-1
+        self.mc_data, self.mc_obj = evaluate_MC_with_ROM(self.ROM_data, self.ROM_obj, self.data_train_read_raw, self.mc_design, self.nData, self.nMCSamples, self.verbose)
+        # Calculation Uncertainty
         self.prior_mean, self.prior_p90mp10, self.synthetic_data, self.results = uncertainty_reduction(self.mc_obj, self.mc_data, self.ROM_data, self.data_train_read_raw, 
                                                                                                        self.MeasureType, self.nData, self.nDataRealization, self.nParam, 
                                                                                                        self.nColumn_data, self.x_min, self.x_max, self.eps, self.err_option, 
@@ -250,7 +254,7 @@ def read_train_sim_results(Data_Directory, MeasureType, Obj_filename, nColumn_ob
     parameters    = [eps, nData, time_point]
     return training_data, raw_data, parameters
 
-def rom_validation(ROMs_validation, ROM_o, ROM_d, x_train_scaled, y_train, data_train, nTrain, nData, data_train_read_raw, NN=False):
+def rom_validation(ROMs_validation, ROM_o, ROM_d, x_train_scaled, y_train, data_train, nTrain, nData, data_train_read_raw, NN=False, verbose=True):
     ## Step 3: 10-fold cross-validation of ROMs
     if ROMs_validation==0:
         ## Step 4: Construct the Mars ROMs for data and response of interest
@@ -263,7 +267,8 @@ def rom_validation(ROMs_validation, ROM_o, ROM_d, x_train_scaled, y_train, data_
                                     epochs=300, verbose=0, batch_size=60, validation_split=0.2)
             else:
                 ROM_data[iData].fit(x_train_scaled[:nTrain], data_train[iData])
-        print('Build the ROMs for data points: Done!')
+        if verbose:
+            print('Build the ROMs for data points: Done!')
         # ROMs for obj
         ROM_obj = ROM_o
         if NN:
@@ -271,10 +276,12 @@ def rom_validation(ROMs_validation, ROM_o, ROM_d, x_train_scaled, y_train, data_
                         epochs=300, verbose=0, batch_size=60, validation_split=0.2)
         else:
             ROM_obj.fit(x_train_scaled[:nTrain], y_train)
-        print('Build the ROMs for objective of interests: Done!')
+        if verbose:
+            print('Build the ROMs for objective of interests: Done!')
     
     elif ROMs_validation==1:
-        print('ROMs accuracy validation: 10-fold cross-validation')
+        if verbose:
+            print('ROMs accuracy validation: 10-fold cross-validation')
         # ROMs validation for objs
         Interval     = int(nTrain/10)
         predict_obj  = np.zeros(nTrain)
@@ -310,12 +317,14 @@ def rom_validation(ROMs_validation, ROM_o, ROM_d, x_train_scaled, y_train, data_
             if predict_obj[i]<0:
                 predict_obj[i] = 0
         CorreCoeff = np.corrcoef(predict_obj,y_train)[0][1]
-        print('The correlation coefficient between the true values and the predicted values for Obj ROMs: '+ str(CorreCoeff))
+        if verbose:
+            print('The correlation coefficient between the true values and the predicted values for Obj ROMs: '+ str(CorreCoeff))
         # plot1
         CorreCoef_data = np.zeros(nData)
         for i in range (0,nData):
-            CorreCoeff2 = np.corrcoef(predict_data[i],data_train[i])[0][1]        
-            print('The correlation coefficient between the true values and the predicted values for ROM data point '+str(i+1)+': '+ str(CorreCoeff2))
+            CorreCoeff2 = np.corrcoef(predict_data[i],data_train[i])[0][1]      
+            if verbose:
+                print('The correlation coefficient between the true values and the predicted values for ROM data point '+str(i+1)+': '+ str(CorreCoeff2))
             CorreCoef_data[i] = CorreCoeff2
             plt.figure()
             plt.scatter(predict_data[i],data_train[i],marker='*',color='blue')
@@ -349,9 +358,10 @@ def rom_validation(ROMs_validation, ROM_o, ROM_d, x_train_scaled, y_train, data_
         print('Please Select ROMs_validation={0,1}!')
     return ROM_data, ROM_obj
 
-def evaluate_MC_with_ROM(ROM_data, ROM_obj, data_train_read_raw, mc_design, nData, nMCSamples):
+def evaluate_MC_with_ROM(ROM_data, ROM_obj, data_train_read_raw, mc_design, nData, nMCSamples, verbose=True):
     ## Step 6: Evaluate the MC samples using the built ROMs for data points/objs
-    print('Evaluating Monte Carlo samples: ing... ing ...')
+    if verbose:
+        print('Evaluating Monte Carlo samples: ing... ing ...')
     # data
     mc_data = np.zeros((nData, nMCSamples))
     for iData in range(0, nData):
@@ -367,7 +377,8 @@ def evaluate_MC_with_ROM(ROM_data, ROM_obj, data_train_read_raw, mc_design, nDat
     for i in range(0,nMCSamples):
         if mc_obj[i]<0:
             mc_obj[i] = 0
-    print('Evaluate the Monte Carlo samples: Done!')
+    if verbose:
+        print('Evaluate the Monte Carlo samples: Done!')
     return mc_data, mc_obj
     
 def uncertainty_reduction(mc_obj, mc_data, ROM_data, data_train_read_raw, MeasureType, nData, nDataRealization, nParam, nColumn_data, 
@@ -399,10 +410,12 @@ def uncertainty_reduction(mc_obj, mc_data, ROM_data, data_train_read_raw, Measur
                 synthetic_data[i][j] = np.amin(data_train_read_raw)
             if synthetic_data[i][j]>np.amax(data_train_read_raw):
                 synthetic_data[i][j] = np.amax(data_train_read_raw)
-    print('Generate synthetic monitoring data: Done!')
+    if verbose:
+        print('Generate synthetic monitoring data: Done!')
     # Calculate posterior metrics
     results = Uncertainty_calc(mc_data, synthetic_data, mc_obj, err_option, eps, MeasureType, time_sensitivity, len(nColumn_data), verbose)
-    print('\nData assimilation is done!')
+    if verbose:
+        print('\nData assimilation is done!')
     return prior_mean, prior_p90mp10, synthetic_data, results
 
 def make_post_processing(post_processing, results, synthetic_data, mc_obj, prior_p90mp10, data_train_read_raw0, time_point, Total_time, nDataRealization, nMCSamples, nColumn_data, nTimeSeries):
