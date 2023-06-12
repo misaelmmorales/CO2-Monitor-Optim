@@ -1,11 +1,15 @@
 import os
+import math
 from time import time
 
 import numpy as np
 import pandas as pd
 from scipy.io import loadmat
-import tensorflow as tf
 from scipy.optimize import minimize
+
+from geneticalgorithm import geneticalgorithm as ga
+import scipy.optimize as opt
+from numdifftools import Jacobian, Hessian
 
 import matplotlib.pyplot as plt
 from pyearth import Earth
@@ -19,12 +23,141 @@ from sklearn.linear_model import Ridge, LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 
+import tensorflow as tf
 import keras
 import keras.backend as K
 from keras import Model
 from keras.layers import Input, Dense, BatchNormalization, PReLU, Dropout
 from keras.regularizers import L1, L2
 
+class FullOpt:
+    def __init__(self, select=0):
+        self.dims = 2
+        self.measure_type = 1
+        self.ROM_obj = LinearRegression()
+        self.ROM_data = LinearRegression()
+        self.nMCSamples = 750
+        self.nDataRealization = 25
+        self.verbose = False
+        
+        def f1(x):  return (1-x[0])**2 + 100*(x[1]-x[0]**2)**2
+        def f2(x):  return x[1]*x[0]**2 - 2*x[0]*x[1]**2 + 3*x[0]*x[1] + 4
+        def f3(x):  return -x[0]*x[1]*np.exp(-(x[0]**2+x[1]**2)/2)
+        def f4(x):  return 1 - ((1 + np.cos(12*np.sqrt(x[0]**2+x[1]**2)))/(0.5 * (x[0]**2+x[1]**2) + 2))
+        def f5(x):  return np.abs(x[0]*np.sin(x[0])+0.1*x[0]) + np.abs(x[1]*np.sin(x[1])*0.1*x[1])
+        def f6(x):  return -20*np.exp(-0.2*np.sqrt(0.5*(x[0]**2+x[1]**2))) - np.exp(0.5*(np.cos (2*np.pi*x[0])+np.cos(2*np.pi*x[1]))) + np.exp(1) + 20
+        def f7(x):  return ((x[0]**2+x[1]**2)/4000) - np.cos(x[0])*np.cos(x[1]/np.sqrt(2))+1
+        def f8(x):  return x[0]**2 + x[1]**2 - 10*np.cos(2*np.pi*x[0]) - 10*np.cos(2*np.pi*x[1]) + 20
+        def f9(x):  return (np.sqrt(np.sqrt(x[0]**2+x[1]**2)) + np.sqrt(np.sqrt(x[0]**2+x[1]**2))*np.sin(50*np.sqrt(x[0]**2+x[1]**2)**(1/5))**2)**2
+        def f10(x):  return -x[0]*np.sin(np.sqrt(np.abs(x[0]))) - x[1]*np.sin(np.sqrt(np.abs(x[1]))) + 837.9657745448674
+        def f11(x): return (np.abs(x[0])+np.abs(x[1])) * np.exp(-np.sin(x[0]**2) - np.sin(x[1]**2))
+        def f12(x): return 1 - np.cos(2*np.pi*np.sqrt(x[0]**2+x[1]**2)) + 0.1*np.sqrt(x[0]**2+x[1]**2)
+        
+        def f0(obj):
+            res = proxy(ncol_data        = int(obj), 
+                        measure_type     = self.measure_type,
+                        rom_obj          = self.ROM_obj, 
+                        rom_data         = self.ROM_data, 
+                        nMCSamples       = self.nMCSamples, 
+                        nDataRealization = self.nDataRealization, 
+                        verbose          = self.verbose)
+            return res.value
+        
+        if   select==0:  self.fun = f0
+        elif select==1:  self.fun = f1
+        elif select==2:  self.fun = f2
+        elif select==3:  self.fun = f3
+        elif select==4:  self.fun = f4
+        elif select==5:  self.fun = f5
+        elif select==6:  self.fun = f6
+        elif select==7:  self.fun = f7
+        elif select==8:  self.fun = f8
+        elif select==9:  self.fun = f9
+        elif select==10: self.fun = f10
+        elif select==11: self.fun = f11
+        elif select==12: self.fun = f12
+        else: print('please select a function between 0 and 12 - [0=CO2-Optim-Proxy, 1-12=Test-Functions]')
+        
+    def fun_jac(self, x):
+        self.Jac = Jacobian(lambda x: self.fun(x))(x).ravel()
+        return self.Jac
+    
+    def fun_hess(self, x):
+        self.Hess = Hessian(lambda x: self.fun(x))(x)
+        return self.Hess
+        
+    def global_opt(self, 
+                   varbounds=[-10,10], vartype='real', maxiter=1000, pop_size=50,
+                   cross_prob=0.25, cross_type='uniform', mut_prob=0.2, parent_prop=0.2, elitratio=0.01, 
+                   maxiter_no_improv=100, Convergence_Curve=False, Progress_Bar=False):
+        params = {'max_num_iteration':      maxiter ,   
+                  'population_size':        pop_size,
+                  'crossover_probability':  cross_prob, 
+                  'crossover_type':         cross_type, 
+                  'mutation_probability':   mut_prob,  
+                  'parents_portion':        parent_prop, 
+                  'elit_ratio':             elitratio,
+                  'max_iteration_without_improv': maxiter_no_improv}
+        self.global_model = ga(function             = self.fun,    
+                               dimension            = self.dims,
+                               variable_type        = vartype,     
+                               variable_boundaries  = np.array([varbounds]*self.dims),
+                               algorithm_parameters = params,      
+                               convergence_curve    = Convergence_Curve,
+                               progress_bar         = Progress_Bar)
+        self.global_model.run()
+        xsol, ysol, fsol = self.global_model.best_variable[0], self.global_model.best_variable[1], self.global_model.best_function
+        self.global_res_df = pd.DataFrame(np.array((xsol, ysol, fsol)), index=['X','Y','f']).T
+        return self.global_model, self.global_res_df
+    
+    def local_opt(self, x0=[-1,1], method='CG', tol=None, options={'maxiter':None, 'disp':False, 'gtol':1e-6}):
+        '''
+        Methods: 
+            'Nelder-Mead', 'Powell', 'CG - conjugate gradient', 'Newton-CG', 'BFGS', 'L-BFGS-B (bounded)', 
+            'TNC - truncated Newton', 'COBYLA (constrained opt by linear approx)', 'SLSQP (sequential least squares programming)', 
+            'dogleg', 'trust-constr', 'trust-ncg (newtorn conjugate gradient)', 'trust-exact', 'trust-krylov']
+        '''
+        all_x, all_y, all_f = [x0[0]], [x0[1]], [self.fun(x0)]
+        def store(X_):
+            x, y = X_
+            all_x.append(x)
+            all_y.append(y)
+            all_f.append(self.fun(X_))
+        self.local_res = opt.minimize(fun=self.fun, x0=x0, method=method, tol=tol,
+                                      jac=self.fun_jac, hess=self.fun_hess, 
+                                      callback=store, options=options)
+        print('Method: {} | Solution: (x={:.3f}, y={:.3f}), f(x,y)={:.5f} | niter: {}'.format(method, all_x[-1], all_y[-1], all_f[-1], len(all_f)))
+        self.local_res_df = pd.DataFrame({'X':all_x, 'Y':all_y, 'f':all_f})
+        return self.local_res, self.local_res_df  
+    
+    def make_plot(self, global_res, local_res, labels=['Global','Local'], npts=500, levels=30,
+                    delta_lims = 1, showcontours=False, filled=False,
+                    mbounds=[-3,3], angle=[30,45], rstride=8, cstride=8, alpha=0.8, msize=[60,60], 
+                    markers=['d','*'], cmaps=['viridis','jet','coolwarm'], colors=['r','b'], figsize=(25,8)):
+
+        xx = np.linspace(mbounds[0], mbounds[1], npts)
+        X, Y = np.meshgrid(xx, xx)
+        fig = plt.figure(figsize=figsize)
+        ax1 = plt.subplot(121)
+        if filled:  
+            im1 = plt.contourf(X, Y, self.fun([X,Y]), levels=levels, cmap=cmaps[0], alpha=alpha)
+        else:       
+            im1 = plt.contour(X,  Y, self.fun([X,Y]), levels=levels, cmap=cmaps[0], alpha=alpha)
+        ax1.scatter(global_res['X'], global_res['Y'], c=colors[0], s=msize[0], marker=markers[0], label=labels[0])
+        ax1.plot(local_res['X'], local_res['Y'],  c=colors[1], linestyle='-', marker=markers[1], label=labels[1])
+        ax1.set(xlabel='X', ylabel='Y', title='Contours $f(x,y)$'); plt.colorbar(im1, label='$f(x,y)$'); plt.legend()
+        ax2 = fig.add_subplot(122, projection='3d')
+        ax2.view_init(elev=angle[0], azim=angle[1])
+        im2 = ax2.plot_surface(X, Y, self.fun([X,Y]), cmap=cmaps[1], alpha=alpha, cstride=cstride, rstride=rstride)
+        if showcontours:
+            ax2.contour(X, Y, self.fun([X,Y]), zdir='z', offset=-1, cmap=cmaps[2])
+            ax2.set(xlim=(mbounds[0]-delta_lims,mbounds[1]+delta_lims), ylim=(mbounds[0]-delta_lims,mbounds[1]+delta_lims))
+        ax2.scatter(global_res['X'], global_res['Y'], global_res['f'],                c=colors[0], marker=markers[0], s=msize[0], label=labels[0])
+        ax2.scatter(local_res.iloc[-1,0], local_res.iloc[-1,1], local_res.iloc[-1,2], c=colors[1], marker=markers[1], s=msize[1], label=labels[1])
+        ax2.set(xlabel='X', ylabel='Y', zlabel='Z', title='Surface $f(x,y)$'); plt.colorbar(im2, label='$f(x,y)$'); plt.legend()
+        plt.show()
+
+###############################################################################################################################################################################
 class proxy:
     def __init__(self, ncol_data=7, data_dir=os.path.join(os.getcwd(),'data'), measure_type=1, obj_fname='run_co2mt.his', 
                  ncol_obj=50, tot_time=1800, nTime=60, nIntv=1, nTrain=500, nParam=4, nMCSamples=100000, nDataRealization=200,
