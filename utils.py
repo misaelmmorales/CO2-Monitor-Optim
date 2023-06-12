@@ -46,7 +46,7 @@ class FullOpt:
         self.verbose = False
         
         def f0(obj):
-            res = proxy(ncol_data        = int(obj), 
+            res = Proxy(ncol_data        = int(obj), 
                         measure_type     = self.measure_type,
                         rom_obj          = self.ROM_obj, 
                         rom_data         = self.ROM_data, 
@@ -158,7 +158,7 @@ class FullOpt:
         if np.min(self.fun([X,Y])) < offset:
             offset = -100
         
-        fig = plt.figure(figsize=figsize)     
+        fig = plt.figure(figsize=figsize)     #angle=[45,225]
         
         ax1 = plt.subplot(121)
         if filled: 
@@ -196,7 +196,7 @@ class FullOpt:
         plt.show()
 
 ###############################################################################################################################################################################
-class proxy:
+class Proxy:
     def __init__(self, ncol_data=7, data_dir=os.path.join(os.getcwd(),'data'), measure_type=1, obj_fname='run_co2mt.his', 
                  ncol_obj=50, tot_time=1800, nTime=60, nIntv=1, nTrain=500, nParam=4, nMCSamples=100000, nDataRealization=200,
                  xmin=[1e-19, 1e-19, 1e-19, 0.5], xmax=[1e-14, 1e-14, 1e-14, 2.0], error_option=3, time_sensitivity=1,
