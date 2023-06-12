@@ -31,14 +31,29 @@ from keras.layers import Input, Dense, BatchNormalization, PReLU, Dropout
 from keras.regularizers import L1, L2
 
 class FullOpt:
-    def __init__(self, select=0):
-        self.dims = 2
+    def __init__(self, select=None, dims=2):
+
+        if dims < 1 or dims > 2:
+            print('Plaese select dimensionality 1 (CO2-Optim-Proxy) or 2 (Test-Functions)')
+        else:
+            self.dims = dims         
+        
         self.measure_type = 1
         self.ROM_obj = LinearRegression()
         self.ROM_data = LinearRegression()
         self.nMCSamples = 750
         self.nDataRealization = 25
         self.verbose = False
+        
+        def f0(obj):
+            res = proxy(ncol_data        = int(obj), 
+                        measure_type     = self.measure_type,
+                        rom_obj          = self.ROM_obj, 
+                        rom_data         = self.ROM_data, 
+                        nMCSamples       = self.nMCSamples, 
+                        nDataRealization = self.nDataRealization, 
+                        verbose          = self.verbose)
+            return res.value
         
         def f1(x):  return (1-x[0])**2 + 100*(x[1]-x[0]**2)**2
         def f2(x):  return x[1]*x[0]**2 - 2*x[0]*x[1]**2 + 3*x[0]*x[1] + 4
@@ -52,17 +67,7 @@ class FullOpt:
         def f10(x):  return -x[0]*np.sin(np.sqrt(np.abs(x[0]))) - x[1]*np.sin(np.sqrt(np.abs(x[1]))) + 837.9657745448674
         def f11(x): return (np.abs(x[0])+np.abs(x[1])) * np.exp(-np.sin(x[0]**2) - np.sin(x[1]**2))
         def f12(x): return 1 - np.cos(2*np.pi*np.sqrt(x[0]**2+x[1]**2)) + 0.1*np.sqrt(x[0]**2+x[1]**2)
-        
-        def f0(obj):
-            res = proxy(ncol_data        = int(obj), 
-                        measure_type     = self.measure_type,
-                        rom_obj          = self.ROM_obj, 
-                        rom_data         = self.ROM_data, 
-                        nMCSamples       = self.nMCSamples, 
-                        nDataRealization = self.nDataRealization, 
-                        verbose          = self.verbose)
-            return res.value
-        
+              
         if   select==0:  self.fun = f0
         elif select==1:  self.fun = f1
         elif select==2:  self.fun = f2
@@ -89,72 +94,105 @@ class FullOpt:
     def global_opt(self, 
                    varbounds=[-10,10], vartype='real', maxiter=1000, pop_size=50,
                    cross_prob=0.25, cross_type='uniform', mut_prob=0.2, parent_prop=0.2, elitratio=0.01, 
-                   maxiter_no_improv=100, Convergence_Curve=False, Progress_Bar=False):
-        params = {'max_num_iteration':      maxiter ,   
-                  'population_size':        pop_size,
-                  'crossover_probability':  cross_prob, 
-                  'crossover_type':         cross_type, 
-                  'mutation_probability':   mut_prob,  
-                  'parents_portion':        parent_prop, 
-                  'elit_ratio':             elitratio,
-                  'max_iteration_without_improv': maxiter_no_improv}
+                   maxiter_no_improv=100, showConvergenceCurve=False, showProgressBar=False):
+        
         self.global_model = ga(function             = self.fun,    
                                dimension            = self.dims,
                                variable_type        = vartype,     
                                variable_boundaries  = np.array([varbounds]*self.dims),
-                               algorithm_parameters = params,      
-                               convergence_curve    = Convergence_Curve,
-                               progress_bar         = Progress_Bar)
+                               algorithm_parameters = {'max_num_iteration':       maxiter ,   
+                                                        'population_size':        pop_size,
+                                                        'crossover_probability':  cross_prob, 
+                                                        'crossover_type':         cross_type, 
+                                                        'mutation_probability':   mut_prob,  
+                                                        'parents_portion':        parent_prop, 
+                                                        'elit_ratio':             elitratio,
+                                                        'max_iteration_without_improv': maxiter_no_improv},      
+                               convergence_curve    = showConvergenceCurve,
+                               progress_bar         = showProgressBar)
         self.global_model.run()
-        xsol, ysol, fsol = self.global_model.best_variable[0], self.global_model.best_variable[1], self.global_model.best_function
-        self.global_res_df = pd.DataFrame(np.array((xsol, ysol, fsol)), index=['X','Y','f']).T
+        if self.dims == 2:
+            xsol, ysol, fsol = self.global_model.best_variable[0], self.global_model.best_variable[1], self.global_model.best_function
+            self.global_res_df = pd.DataFrame(np.array((xsol, ysol, fsol)), index=['X','Y','f']).T
+        elif self.dims == 1:
+            xsol, fsol = self.global_model.best_variable, self.global_model.best_function
+            self.global_res_df = pd.DataFrame(np.array((xsol, fsol)), index=['X','f']).T
         return self.global_model, self.global_res_df
     
     def local_opt(self, x0=[-1,1], method='CG', tol=None, options={'maxiter':None, 'disp':False, 'gtol':1e-6}):
         '''
         Methods: 
-            'Nelder-Mead', 'Powell', 'CG - conjugate gradient', 'Newton-CG', 'BFGS', 'L-BFGS-B (bounded)', 
-            'TNC - truncated Newton', 'COBYLA (constrained opt by linear approx)', 'SLSQP (sequential least squares programming)', 
-            'dogleg', 'trust-constr', 'trust-ncg (newtorn conjugate gradient)', 'trust-exact', 'trust-krylov']
+            'Nelder-Mead', 'Powell', 'CG (conjugate gradient)', 'Newton-CG', 'BFGS', 'L-BFGS-B (bounded)', 
+            'TNC (truncated Newton)', 'COBYLA (constrained opt by linear approx)', 'SLSQP (sequential LS programming)', 
+            'dogleg', 'trust-constr', 'trust-ncg (newton conjugate gradient)', 'trust-exact', 'trust-krylov']
         '''
-        all_x, all_y, all_f = [x0[0]], [x0[1]], [self.fun(x0)]
-        def store(X_):
-            x, y = X_
-            all_x.append(x)
-            all_y.append(y)
-            all_f.append(self.fun(X_))
-        self.local_res = opt.minimize(fun=self.fun, x0=x0, method=method, tol=tol,
-                                      jac=self.fun_jac, hess=self.fun_hess, 
-                                      callback=store, options=options)
-        print('Method: {} | Solution: (x={:.3f}, y={:.3f}), f(x,y)={:.5f} | niter: {}'.format(method, all_x[-1], all_y[-1], all_f[-1], len(all_f)))
-        self.local_res_df = pd.DataFrame({'X':all_x, 'Y':all_y, 'f':all_f})
-        return self.local_res, self.local_res_df  
+        if self.dims==2:
+            all_x, all_y, all_f = [x0[0]], [x0[1]], [self.fun(x0)]
+            def store(X_):
+                all_x.append(X_[0]); all_y.append(X_[1]); all_f.append(self.fun(X_))
+            self.local_res = opt.minimize(fun=self.fun, x0=x0, method=method, tol=tol, jac=self.fun_jac, hess=self.fun_hess, callback=store, options=options)
+            print('Method: {} | Solution: (x={:.3f}, y={:.3f}), f(x,y)={:.5f} | niter: {}'.format(method, all_x[-1], all_y[-1], all_f[-1], len(all_f)))
+            self.local_res_df = pd.DataFrame({'X':all_x, 'Y':all_y, 'f':all_f})
+        elif self.dims==1:
+            all_x, all_f = [x0], [self.fun(x0)]
+            def store(X_):
+                all_x.append(X_); all_f.append(self.fun(X_))
+            self.local_res = opt.minimize(fun=self.fun, x0=x0, method=method, tol=tol, jac=self.fun_jac, hess=self.fun_hess, callback=store, options=options)
+            print('Method: {} | Solution: (x={:.3f}, f(x)={:.5f} | niter: {}'.format(method, all_x[-1], all_f[-1], len(all_f)))
+            self.local_res_df = pd.DataFrame({'X':all_x, 'f':all_f})
+        return self.local_res, self.local_res_df
     
-    def make_plot(self, global_res, local_res, labels=['Global','Local'], npts=500, levels=30,
-                    delta_lims = 1, showcontours=False, filled=False,
-                    mbounds=[-3,3], angle=[30,45], rstride=8, cstride=8, alpha=0.8, msize=[60,60], 
-                    markers=['d','*'], cmaps=['viridis','jet','coolwarm'], colors=['r','b'], figsize=(25,8)):
+    def make_plot(self, global_res=None, local_res=None, labels=['Global','Local'], npts=300, levels=30,
+                    showcontours=False, filled=False, showtrajectory=False, offset=-1,
+                    mbounds=[-3,3], angle=[None,None], rstride=10, cstride=10, alpha=0.8, msize=[60,60], 
+                    markers=['d','*'], cmaps=['inferno','jet'], colors=['r','k'], figsize=(25,8)):
 
-        xx = np.linspace(mbounds[0], mbounds[1], npts)
-        X, Y = np.meshgrid(xx, xx)
-        fig = plt.figure(figsize=figsize)
+        if np.array([mbounds]).size==2:
+            xx = np.linspace(mbounds[0], mbounds[1], npts)
+            X, Y = np.meshgrid(xx, xx)
+        elif np.array([mbounds]).size==4:
+            xx = np.linspace(mbounds[0][0], mbounds[0][1], npts)
+            yy = np.linspace(mbounds[1][0], mbounds[1][1], npts)
+            X, Y = np.meshgrid(xx, yy)
+        
+        if np.min(self.fun([X,Y])) < offset:
+            offset = -100
+        
+        fig = plt.figure(figsize=figsize)     
+        
         ax1 = plt.subplot(121)
-        if filled:  
+        if filled: 
             im1 = plt.contourf(X, Y, self.fun([X,Y]), levels=levels, cmap=cmaps[0], alpha=alpha)
-        else:       
+        else:
             im1 = plt.contour(X,  Y, self.fun([X,Y]), levels=levels, cmap=cmaps[0], alpha=alpha)
-        ax1.scatter(global_res['X'], global_res['Y'], c=colors[0], s=msize[0], marker=markers[0], label=labels[0])
-        ax1.plot(local_res['X'], local_res['Y'],  c=colors[1], linestyle='-', marker=markers[1], label=labels[1])
-        ax1.set(xlabel='X', ylabel='Y', title='Contours $f(x,y)$'); plt.colorbar(im1, label='$f(x,y)$'); plt.legend()
+        if global_res is not None:
+            ax1.scatter(global_res['X'], global_res['Y'], c=colors[0], s=msize[0], marker=markers[0], label=labels[0])
+        if local_res is not None:
+            ax1.plot(local_res['X'], local_res['Y'],  c=colors[1], linestyle='-', marker=markers[1], label=labels[1])
+            ax1.scatter(local_res.iloc[-1,0], local_res.iloc[-1,1], c=colors[1], s=msize[0], marker='s') #endpoint
+        ax1.set(xlabel='X', ylabel='Y', title='Contours $f(x,y)$'); plt.colorbar(im1, label='$f(x,y)$')
+        if local_res is not None or global_res is not None:
+            plt.legend()
+        
         ax2 = fig.add_subplot(122, projection='3d')
         ax2.view_init(elev=angle[0], azim=angle[1])
         im2 = ax2.plot_surface(X, Y, self.fun([X,Y]), cmap=cmaps[1], alpha=alpha, cstride=cstride, rstride=rstride)
-        if showcontours:
-            ax2.contour(X, Y, self.fun([X,Y]), zdir='z', offset=-1, cmap=cmaps[2])
-            ax2.set(xlim=(mbounds[0]-delta_lims,mbounds[1]+delta_lims), ylim=(mbounds[0]-delta_lims,mbounds[1]+delta_lims))
-        ax2.scatter(global_res['X'], global_res['Y'], global_res['f'],                c=colors[0], marker=markers[0], s=msize[0], label=labels[0])
-        ax2.scatter(local_res.iloc[-1,0], local_res.iloc[-1,1], local_res.iloc[-1,2], c=colors[1], marker=markers[1], s=msize[1], label=labels[1])
-        ax2.set(xlabel='X', ylabel='Y', zlabel='Z', title='Surface $f(x,y)$'); plt.colorbar(im2, label='$f(x,y)$'); plt.legend()
+        if showcontours: 
+            ax2.contour(X, Y, self.fun([X,Y]), zdir='z', offset=offset, levels=levels, cmap=cmaps[0], alpha=alpha)
+            if global_res is not None:
+                ax2.scatter(global_res['X'], global_res['Y'], offset, c=colors[0], marker=markers[0], s=msize[0], alpha=alpha)
+            elif local_res is not None:
+                ax2.scatter(local_res.iloc[-1,0], local_res.iloc[-1,1], offset, c=colors[1], marker=markers[1], s=msize[1], alpha=alpha)
+        if global_res is not None:
+            ax2.scatter(global_res['X'], global_res['Y'], global_res['f'], c=colors[0], marker=markers[0], s=msize[0], label=labels[0])
+        if local_res is not None:
+            if showtrajectory: 
+                ax2.plot(local_res['X'], local_res['Y'], local_res['f'], c=colors[1], linestyle='-', marker=markers[1], label=labels[1])  
+            else:
+                ax2.scatter(local_res.iloc[-1,0], local_res.iloc[-1,1], local_res.iloc[-1,2], c=colors[1], marker=markers[1], s=msize[1], label=labels[1])
+        ax2.set(xlabel='X', ylabel='Y', zlabel='Z', title='Surface $f(x,y)$'); plt.colorbar(im2, label='$f(x,y)$')
+        if local_res is not None or global_res is not None:
+            plt.legend()
         plt.show()
 
 ###############################################################################################################################################################################
@@ -193,7 +231,7 @@ class proxy:
                                                                                                        self.nColumn_data, self.x_min, self.x_max, self.eps, self.err_option, 
                                                                                                        self.time_sensitivity, self.verbose)
         self.post_p90mp10_mean, self.post_p90mp10_time, self.post_p90mp10_iData, self.post_mean, self.post_mean_iData, self.nSamples, self.mc_obj_post = self.results
-        self.value = -(self.prior_p90mp10 - self.post_p90mp10_mean) #minimize this objective
+        self.value = -(self.prior_p90mp10 - self.post_p90mp10_mean)/1e6 #minimize this objective
         
 
 ############################## BASICS ##############################
