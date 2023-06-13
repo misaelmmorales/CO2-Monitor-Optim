@@ -12,7 +12,7 @@ import scipy.optimize as opt
 from numdifftools import Jacobian, Hessian
 
 import matplotlib.pyplot as plt
-from pyearth import Earth
+#from pyearth import Earth
 from matk import matk, pest_io
 
 from Uncertainty import *
@@ -146,7 +146,8 @@ class FullOpt:
     def make_plot(self, global_res=None, local_res=None, labels=['Global','Local'], npts=300, levels=30,
                     showcontours=False, filled=False, showtrajectory=False, offset=-1,
                     mbounds=[-3,3], angle=[None,None], rstride=10, cstride=10, alpha=0.8, msize=[60,60], 
-                    markers=['d','*'], cmaps=['inferno','jet'], colors=['r','k'], figsize=(25,8)):
+                    markers=['d','*'], cmaps=['inferno','jet'], colors=['r','k'], 
+                    figsize=(25,8), figname='opt-results'):
 
         if np.array([mbounds]).size==2:
             xx = np.linspace(mbounds[0], mbounds[1], npts)
@@ -194,6 +195,8 @@ class FullOpt:
         ax2.set(xlabel='X', ylabel='Y', zlabel='Z', title='Surface $f(x,y)$'); plt.colorbar(im2, label='$f(x,y)$')
         if local_res is not None or global_res is not None:
             plt.legend()
+        
+        plt.savefig(figname)
         plt.show()
 
 ###############################################################################################################################################################################
@@ -202,7 +205,7 @@ class Proxy:
                  ncol_obj=50, tot_time=1800, nTime=60, nIntv=1, nTrain=500, nParam=4, nMCSamples=100000, nDataRealization=200,
                  xmin=[1e-19, 1e-19, 1e-19, 0.5], xmax=[1e-14, 1e-14, 1e-14, 2.0], error_option=3, time_sensitivity=1,
                  titles=['.', 'Pressure', 'CO2 Saturation (l)', 'Temperature', 'Pressure + CO2 Saturation'], 
-                 rom_val=0, rom_obj=Earth(), rom_data=Earth(),
+                 rom_val=0, rom_obj=LinearRegression(), rom_data=LinearRegression(),
                  NN=False, verbose=False):
         self.nColumn_obj, self.nColumn_data = ncol_obj, [ncol_data]
         self.rom_obj, self.rom_data = rom_obj, rom_data
