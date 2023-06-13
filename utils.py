@@ -38,12 +38,13 @@ class FullOpt:
         else:
             self.dims = dims         
         
-        self.measure_type = 1
-        self.ROM_obj = LinearRegression()
-        self.ROM_data = LinearRegression()
-        self.nMCSamples = 750
-        self.nDataRealization = 25
-        self.verbose = False
+        self.measure_type     = 1
+        self.ROM_obj          = LinearRegression()  #Earth()
+        self.ROM_data         = LinearRegression()  #Earth()
+        self.nMCSamples       = 750                 #100000
+        self.NN               = False
+        self.nDataRealization = 25                  #200
+        self.verbose          = False
         
         def f0(obj):
             res = Proxy(ncol_data        = int(obj), 
@@ -231,7 +232,10 @@ class Proxy:
                                                                                                        self.nColumn_data, self.x_min, self.x_max, self.eps, self.err_option, 
                                                                                                        self.time_sensitivity, self.verbose)
         self.post_p90mp10_mean, self.post_p90mp10_time, self.post_p90mp10_iData, self.post_mean, self.post_mean_iData, self.nSamples, self.mc_obj_post = self.results
-        self.value = -(self.prior_p90mp10 - self.post_p90mp10_mean)/1e6 #minimize this objective
+        if (self.prior_p90mp10-self.post_p90mp10_mean) != 0:
+            self.value = -(self.prior_p90mp10 - self.post_p90mp10_mean)/1e6 #minimize this objective
+        elif (self.prior_p90mp10-self.post_p90mp10_mean) == 0:
+            self.value = 0
         
 
 ############################## BASICS ##############################
@@ -334,7 +338,8 @@ def read_train_sim_results(Data_Directory, MeasureType, Obj_filename, nColumn_ob
         eps = [0.002, 0.05]
     else:
         print("No such measurement option, optimization will be terminated")
-    print('Measure Type: {} | Data File Name: {} | Description: {} | nColData: {} | HM-epsilon: {}'.format(MeasureType, data_filename, titles[MeasureType], nColumn_data, eps))
+    if verbose:
+        print('Measure Type: {} | Data File Name: {} | Description: {} | nColData: {} | HM-epsilon: {}'.format(MeasureType, data_filename, titles[MeasureType], nColumn_data, eps))
     nData_read =  nTimeSeries*len(nColumn_data)*nInterval  # The actural number of data read from simulation output
     nData      =  nTimeSeries*len(nColumn_data)            # The number of measurement data points
     data_train_read_raw  = np.zeros((nTrain,nData_read))
