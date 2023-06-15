@@ -19,8 +19,9 @@ check_tensorflow_gpu()
 result_presWAT = {}
 opt = FullOpt(select=0, dims=1)
 opt.measure_type     = 1
-opt.nDataRealization = 50
-opt.nMCSamples       = 1000
+opt.nDataRealization = 200
+opt.nMCSamples       = 100000
+opt.ROM_data, opt.ROM_obj = Earth(), Earth()
 for i in range(2, 50):
     result_presWAT[i] = opt.fun(i)
 result_presWAT_arr = np.array(list(result_presWAT.values()))
@@ -31,8 +32,9 @@ print('Minima: {:.3f} x 1e6 | Column #: {}'.format(min, minloc))
 result_co2sl = {}
 opt = FullOpt(select=0, dims=1)
 opt.measure_type     = 2
-opt.nDataRealization = 50
-opt.nMCSamples       = 1000
+opt.nDataRealization = 200
+opt.nMCSamples       = 100000
+opt.ROM_data, opt.ROM_obj = Earth(), Earth()
 for i in range(2, 50):
     result_co2sl[i] = opt.fun(i)
 result_co2sl_arr = np.array(list(result_co2sl.values()))
@@ -43,8 +45,9 @@ print('Minima: {:.3f} x 1e6 | Column #: {}'.format(min, minloc))
 result_temp = {}
 opt = FullOpt(select=0, dims=1)
 opt.measure_type     = 3
-opt.nDataRealization = 50
-opt.nMCSamples       = 1000
+opt.nDataRealization = 200
+opt.nMCSamples       = 100000
+opt.ROM_data, opt.ROM_obj = Earth(), Earth()
 for i in range(2, 50):
     result_temp[i] = opt.fun(i)
 result_temp_arr = np.array(list(result_temp.values()))
@@ -55,8 +58,9 @@ print('Minima: {:.3f} x 1e6 | Column #: {}'.format(min, minloc))
 result_presWAT_co2sl = {}
 opt = FullOpt(select=0, dims=1)
 opt.measure_type     = 4
-opt.nDataRealization = 50
-opt.nMCSamples       = 1000
+opt.nDataRealization = 200
+opt.nMCSamples       = 100000
+opt.ROM_data, opt.ROM_obj = Earth(), Earth()
 for i in range(2, 50):
     result_presWAT_co2sl[i] = opt.fun(i)
 result_presWAT_co2sl_arr = np.array(list(result_presWAT_co2sl.values()))

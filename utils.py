@@ -12,7 +12,7 @@ import scipy.optimize as opt
 from numdifftools import Jacobian, Hessian
 
 import matplotlib.pyplot as plt
-#from pyearth import Earth
+from pyearth import Earth
 from matk import matk, pest_io
 
 from Uncertainty import *

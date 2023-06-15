@@ -1,0 +1,10 @@
+Checking Tensorflow Version:
+Tensorflow built with CUDA? True
+Tensorflow version: 2.12.0
+# GPU available: 4
+CUDA: 11.8 | cuDNN: 8
+[PhysicalDevice(name='/physical_device:CPU:0', device_type='CPU'), PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU'), PhysicalDevice(name='/physical_device:GPU:1', device_type='GPU'), PhysicalDevice(name='/physical_device:GPU:2', device_type='GPU'), PhysicalDevice(name='/physical_device:GPU:3', device_type='GPU')]
+Minima: -29.914 x 1e6 | Column #: 37
+Minima: -21.256 x 1e6 | Column #: 44
+Minima: -21.054 x 1e6 | Column #: 25
+Minima: -29.914 x 1e6 | Column #: 37
