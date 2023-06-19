@@ -16,54 +16,37 @@ check_tensorflow_gpu()
 # opt.make_plot(global_res_df, local_res_df, mbounds=plot_bounds, angle=[45,225],
 #               showcontours=True, showtrajectory=True)
 
-result_presWAT = {}
-opt = FullOpt(select=0, dims=1)
-opt.measure_type     = 1
-opt.nDataRealization = 200
-opt.nMCSamples       = 100000
-opt.ROM_data, opt.ROM_obj = Earth(), Earth()
-for i in range(2, 50):
-    result_presWAT[i] = opt.fun(i)
-result_presWAT_arr = np.array(list(result_presWAT.values()))
-np.save('result_presWAT.npy', result_presWAT_arr)
-min, minloc = result_presWAT_arr.min(), result_presWAT_arr.argmin()
-print('Minima: {:.3f} x 1e6 | Column #: {}'.format(min, minloc))
+###########################################################################################################
+######################################### Brute Force optimization ########################################
+###########################################################################################################
+#result_presWAT = run_BruteForce_opt(measure_type=1)
+#result_co2sl   = run_BruteForce_opt(measure_type=2)
+#result_temp    = run_BruteForce_opt(measure_type=3)
+#reuslt_presWAT_co2sl = run_BruteForce_opt(measure_type=4)
 
-result_co2sl = {}
-opt = FullOpt(select=0, dims=1)
-opt.measure_type     = 2
-opt.nDataRealization = 200
-opt.nMCSamples       = 100000
-opt.ROM_data, opt.ROM_obj = Earth(), Earth()
-for i in range(2, 50):
-    result_co2sl[i] = opt.fun(i)
-result_co2sl_arr = np.array(list(result_co2sl.values()))
-np.save('result_co2sl.npy', result_co2sl_arr)
-min, minloc = result_co2sl_arr.min(), result_co2sl_arr.argmin()
-print('Minima: {:.3f} x 1e6 | Column #: {}'.format(min, minloc))
+###########################################################################################################
+########################################### Layer optimization ###########################################
+###########################################################################################################
+run_layer_opt(measure_type=1, layer=1)
+run_layer_opt(measure_type=1, layer=2)
+run_layer_opt(measure_type=1, layer=3)
 
-result_temp = {}
-opt = FullOpt(select=0, dims=1)
-opt.measure_type     = 3
-opt.nDataRealization = 200
-opt.nMCSamples       = 100000
-opt.ROM_data, opt.ROM_obj = Earth(), Earth()
-for i in range(2, 50):
-    result_temp[i] = opt.fun(i)
-result_temp_arr = np.array(list(result_temp.values()))
-np.save('result_temp.npy', result_temp_arr)
-min, minloc = result_temp_arr.min(), result_temp_arr.argmin()
-print('Minima: {:.3f} x 1e6 | Column #: {}'.format(min, minloc))
+run_layer_opt(measure_type=2, layer=1)
+run_layer_opt(measure_type=2, layer=2)
+run_layer_opt(measure_type=2, layer=3)
 
-result_presWAT_co2sl = {}
-opt = FullOpt(select=0, dims=1)
-opt.measure_type     = 4
-opt.nDataRealization = 200
-opt.nMCSamples       = 100000
-opt.ROM_data, opt.ROM_obj = Earth(), Earth()
-for i in range(2, 50):
-    result_presWAT_co2sl[i] = opt.fun(i)
-result_presWAT_co2sl_arr = np.array(list(result_presWAT_co2sl.values()))
-np.save('result_presWAT_co2sl.npy', result_presWAT_co2sl_arr)
-min, minloc = result_presWAT_co2sl_arr.min(), result_presWAT_co2sl_arr.argmin()
-print('Minima: {:.3f} x 1e6 | Column #: {}'.format(min, minloc))
+run_layer_opt(measure_type=3, layer=1)
+run_layer_opt(measure_type=3, layer=2)
+run_layer_opt(measure_type=3, layer=3)
+
+run_layer_opt(measure_type=4, layer=1)
+run_layer_opt(measure_type=4, layer=2)
+run_layer_opt(measure_type=4, layer=3)
+
+###########################################################################################################
+########################################### Column optimization ###########################################
+###########################################################################################################
+run_column_opt(measure_type=1)
+run_column_opt(measure_type=2)
+run_column_opt(measure_type=3)
+run_column_opt(measure_type=4)    

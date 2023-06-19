@@ -42,12 +42,12 @@ class FullOpt:
         self.ROM_obj          = LinearRegression()  #Earth()
         self.ROM_data         = LinearRegression()  #Earth()
         self.nMCSamples       = 750                 #100000
-        self.NN               = False
         self.nDataRealization = 25                  #200
+        self.NN               = False
         self.verbose          = False
         
         def f0(obj):
-            res = Proxy(ncol_data        = int(obj), 
+            res = Proxy(ncol_data        = obj, 
                         measure_type     = self.measure_type,
                         rom_obj          = self.ROM_obj, 
                         rom_data         = self.ROM_data, 
@@ -95,7 +95,8 @@ class FullOpt:
     def global_opt(self, 
                    varbounds=[-10,10], vartype='real', maxiter=1000, pop_size=50,
                    cross_prob=0.25, cross_type='uniform', mut_prob=0.2, parent_prop=0.2, elitratio=0.01, 
-                   maxiter_no_improv=100, showConvergenceCurve=False, showProgressBar=False):
+                   maxiter_no_improv=100, timeout=1e6,
+                   showConvergenceCurve=False, showProgressBar=False):
         
         self.global_model = ga(function             = self.fun,    
                                dimension            = self.dims,
@@ -109,6 +110,7 @@ class FullOpt:
                                                         'parents_portion':        parent_prop, 
                                                         'elit_ratio':             elitratio,
                                                         'max_iteration_without_improv': maxiter_no_improv},      
+                               function_timeout     = timeout,
                                convergence_curve    = showConvergenceCurve,
                                progress_bar         = showProgressBar)
         self.global_model.run()
@@ -148,7 +150,6 @@ class FullOpt:
                     mbounds=[-3,3], angle=[None,None], rstride=10, cstride=10, alpha=0.8, msize=[60,60], 
                     markers=['d','*'], cmaps=['inferno','jet'], colors=['r','k'], 
                     figsize=(25,8), figname='opt-results'):
-
         if np.array([mbounds]).size==2:
             xx = np.linspace(mbounds[0], mbounds[1], npts)
             X, Y = np.meshgrid(xx, xx)
@@ -156,12 +157,9 @@ class FullOpt:
             xx = np.linspace(mbounds[0][0], mbounds[0][1], npts)
             yy = np.linspace(mbounds[1][0], mbounds[1][1], npts)
             X, Y = np.meshgrid(xx, yy)
-        
         if np.min(self.fun([X,Y])) < offset:
             offset = -100
-        
         fig = plt.figure(figsize=figsize)     #angle=[45,225]
-        
         ax1 = plt.subplot(121)
         if filled: 
             im1 = plt.contourf(X, Y, self.fun([X,Y]), levels=levels, cmap=cmaps[0], alpha=alpha)
@@ -205,9 +203,13 @@ class Proxy:
                  ncol_obj=50, tot_time=1800, nTime=60, nIntv=1, nTrain=500, nParam=4, nMCSamples=100000, nDataRealization=200,
                  xmin=[1e-19, 1e-19, 1e-19, 0.5], xmax=[1e-14, 1e-14, 1e-14, 2.0], error_option=3, time_sensitivity=1,
                  titles=['.', 'Pressure', 'CO2 Saturation (l)', 'Temperature', 'Pressure + CO2 Saturation'], 
-                 rom_val=0, rom_obj=LinearRegression(), rom_data=LinearRegression(),
+                 rom_val=0, rom_obj=Earth(), rom_data=Earth(),
                  NN=False, verbose=False):
-        self.nColumn_obj, self.nColumn_data = ncol_obj, [ncol_data]
+        if type(ncol_data) != list:
+            self.nColumn_data = [ncol_data]
+        else:
+            self.nColumn_data = ncol_data
+        self.nColumn_obj = ncol_obj
         self.rom_obj, self.rom_data = rom_obj, rom_data
         self.Data_Directory, self.Obj_Filename, self.MeasureType, self.titles = data_dir, obj_fname, measure_type, titles
         self.Total_time , self.nTimeSeries, self.nInterval, self.nDataRealization = tot_time, nTime, nIntv, nDataRealization
@@ -240,7 +242,6 @@ class Proxy:
         elif (self.prior_p90mp10-self.post_p90mp10_mean) == 0:
             self.value = 0
         
-
 ############################## BASICS ##############################
 def check_tensorflow_gpu():
     sys_info = tf.sysconfig.get_build_info()
@@ -251,6 +252,95 @@ def check_tensorflow_gpu():
     print("CUDA: {} | cuDNN: {}".format(sys_info["cuda_version"], sys_info["cudnn_version"]))
     print(tf.config.list_physical_devices())
     return None
+
+############################ OPTIMIZATION ############################
+def run_BruteForce_opt(measure_type, nDataRealization=200, nMCSamples=100000, ROM_data=Earth(), ROM_obj=Earth()):
+    if measure_type==1:
+        name = 'presWAT'
+    elif measure_type==2:
+        name = 'co2sl'
+    elif measure_type==3:
+        name='temp'
+    elif measure_type==4:
+        name='presWAT_co2sl'
+    else:
+        print('please select a measure type [1,4]')
+    result = {}
+    opt = FullOpt(select=0, dims=1)
+    opt.measure_type = measure_type
+    opt.nDataRealization = nDataRealization
+    opt.nMCSamples = nMCSamples
+    opt.ROM_data, opt.ROM_obj = ROM_data, ROM_obj
+    for i in range(2,50):
+        result[i] = opt.fun(i)
+    result_arr = np.array(list(result.values()))
+    np.save('{}.npy'.format(name), result_arr)
+    min, minloc = result_arr.min(), result_arr.argmin()
+    print('Minima: {:.3f} x 1e6 | Column #: {}'.format(min, minloc))
+    return result_arr
+
+def run_layer_opt(measure_type, layer, time_out=1e5,
+                  nDataRealization=200, nMCSamples=100000, ROM_data=Earth(), ROM_obj=Earth(),
+                  maxiter=200, pop_size=20, parent_prop=0.2, cross_prob = 0.5, mut_prob=0.25, maxiter_no_improv=10):
+    if measure_type==1:
+        name = 'presWAT'
+    elif measure_type==2:
+        name = 'co2sl'
+    elif measure_type==3:
+        name='temp'
+    elif measure_type==4:
+        name='presWAT_co2sl'
+    else:
+        print('please select a measure type [1,4]')
+    if layer==1:
+        colbounds = [1,16]
+    elif layer==2:
+        colbounds = [16,32]
+    elif layer==3:
+        colbounds = [32,48]
+    else:
+        print('please select a layer {1,2,3}')
+    opt = FullOpt(select=0, dims=1)
+    opt.measure_type     = measure_type
+    opt.nDataRealization = nDataRealization
+    opt.nMCSamples       = nMCSamples
+    opt.ROM_data, opt.ROM_obj = ROM_data, ROM_obj
+    global_res, global_res_df = opt.global_opt(varbounds   = colbounds,
+                                               vartype     = 'int',
+                                               maxiter     = maxiter,
+                                               pop_size    = pop_size,
+                                               parent_prop = parent_prop,
+                                               elitratio   = 1/pop_size,
+                                               cross_prob  = cross_prob,
+                                               mut_prob    = mut_prob,
+                                               timeout     = time_out,
+                                               maxiter_no_improv = maxiter_no_improv)
+    np.save('global_{}_layer_{}.npy'.format(name, layer), global_res_df)
+    return global_res_df
+
+def run_column_opt(measure_type, nDataRealization=200, nMCSamples=100000, rom_data=Earth(), rom_obj=Earth()):
+    if measure_type==1:
+        name = 'presWAT'
+    elif measure_type==2:
+        name = 'co2sl'
+    elif measure_type==3:
+        name='temp'
+    elif measure_type==4:
+        name='presWAT_co2sl'
+    else:
+        print('please select a measure type [1,4]')
+    templist, well = np.arange(2,50,step=16), {}
+    for i in range(16):
+        well[i] = templist+i
+    wells = np.array(list(well.values()))
+    results = {}
+    for i in range(16):
+        results[i] = Proxy(ncol_data=list(wells[i]),          measure_type=measure_type,
+                           nDataRealization=nDataRealization, nMCSamples=nMCSamples, 
+                           rom_data=rom_data,                 rom_obj=rom_obj)
+        result = np.array(list(results.values()))
+        np.save('{}_well_{}'.format(name, i), result)
+        return result
 
 
 ############################## PLOTTING ##############################
@@ -299,6 +389,39 @@ def make_rom_predictions(models, x_train_scaled, y_train_scaled, nTrain, figsize
         plt.title('TESTING'); plt.xlabel('true'); plt.ylabel('pred'); plt.xlim([-1,1]); plt.ylim([-1,1]); plt.legend()
         plt.show()
     return y_train_pred, y_test_pred, mse_train, mse_test
+
+def view_results(ext='MARS', suptitle='Results', cmap='PuBu_r', folder=None):
+    if folder==None:
+        result_presWAT = np.load('result_presWAT_{}.npy'.format(ext))
+        result_co2sl   = np.load('result_co2sl_{}.npy'.format(ext))
+        result_temp    = np.load('result_temp_{}.npy'.format(ext))
+        result_presWAT_co2sl = np.load('result_presWAT_co2sl_{}.npy'.format(ext))
+    else:
+        result_presWAT = np.load('{}/result_presWAT_{}.npy'.format(folder, ext))
+        result_co2sl   = np.load('{}/result_co2sl_{}.npy'.format(folder, ext))
+        result_temp    = np.load('{}/result_temp_{}.npy'.format(folder, ext))
+        result_presWAT_co2sl = np.load('{}/result_presWAT_co2sl_{}.npy'.format(folder, ext))
+    results = [result_presWAT, result_co2sl, result_temp, result_presWAT_co2sl]
+    titles  = ['presWAT','co2sl','temp','presWAT_co2sl']
+    temp = np.zeros((48,4))
+    for i in range(4):
+        temp[:,i] = results[i]
+    plt.figure(figsize=(25,5))
+    plt.suptitle(suptitle)
+    for i in range(len(results)):
+        minloc, minval = np.argmin(results[i]), np.min(results[i])
+        plt.subplot(1,5,i+1)
+        plt.plot(results[i], c='C{}'.format(i))
+        plt.scatter(minloc, minval, c='C{}'.format(i), marker='*', s=200)
+        plt.title('{} --- ({}, {:.2f})'.format(titles[i], minloc, minval))
+        plt.xlabel('Column #')
+        if i==0:
+            plt.ylabel('Uncertainty Reduciton [$x10^6$]')
+    plt.subplot(1,5,5)
+    plt.imshow(temp, aspect='auto', cmap=cmap)
+    plt.xticks(np.arange(4), labels=titles); plt.ylabel('Column #')
+    plt.colorbar(label='uncertainty reduction [$x10^6$]')
+    plt.show()
 
 ############################## PROXY MODEL ##############################
 def make_proxy(reg=L1(1e-5), drop=0.2, opt='adam', loss='mse'):
