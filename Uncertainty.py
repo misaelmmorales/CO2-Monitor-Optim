@@ -84,14 +84,16 @@ def  Util_calc_hmerr(mc_result,obs_data,err_option,eps,MeasureType,datapoint_pic
         	  
     for i in range(0,len(abs_err_unscaled)):
         abs_err[i] = abs_err_unscaled[i]/eps_vector
-        
+    
     filtered_sample = []
-#    if err_option == 2:  # MeanAE
-#      #  for i in range(0,len(datapoint_picker)):
-#            err_mc = mean(abs_err[datapoint_picker[i]])/len(abs_err[datapoint_picker[i]])
-#            if err_mc < eps:
-#                filtered_sample = np.where(err_mc<eps)           
-    if err_option == 3: # MaxAE
+    
+    if err_option == 2: #MeanAE
+       for i in range(0,len(datapoint_picker)):
+           err_mc = np.mean(abs_err[datapoint_picker[i]])/len(abs_err[datapoint_picker[i]])
+           if err_mc < eps:
+               filtered_sample = np.where(err_mc<eps)  
+         
+    elif err_option == 3: # MaxAE
         abs_err_v = np.zeros_like(abs_err.T)
         for i in range(0, len(datapoint_picker)*nLoc):
             if i%nLoc == 0:
@@ -102,7 +104,7 @@ def  Util_calc_hmerr(mc_result,obs_data,err_option,eps,MeasureType,datapoint_pic
                 abs_err_v[i] = abs_err.T[int(len(datapoint_picker)*2+(i-2)/nLoc)]
             else:
                 print('At most three monitoring wells can be handled, for more wells, please revise the code!')
-                quit()
+                exit()
         for i in range(0,len(datapoint_picker)):
             err_mc = abs_err_v[:int(datapoint_picker[i]*nLoc+nLoc)].max(axis=0)
             filtered_sample.append(np.where(err_mc<1)[0])

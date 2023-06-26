@@ -23,13 +23,6 @@ from sklearn.linear_model import Ridge, LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 
-import tensorflow as tf
-import keras
-import keras.backend as K
-from keras import Model
-from keras.layers import Input, Dense, BatchNormalization, PReLU, Dropout
-from keras.regularizers import L1, L2
-
 class FullOpt:
     def __init__(self, select=None, dims=2):
 
@@ -241,17 +234,6 @@ class Proxy:
             self.value = -(self.prior_p90mp10 - self.post_p90mp10_mean)/1e6 #minimize this objective
         elif (self.prior_p90mp10-self.post_p90mp10_mean) == 0:
             self.value = 0
-        
-############################## BASICS ##############################
-def check_tensorflow_gpu():
-    sys_info = tf.sysconfig.get_build_info()
-    print('Checking Tensorflow Version:')
-    print('Tensorflow built with CUDA?',  tf.test.is_built_with_cuda())
-    print('Tensorflow version:', tf.__version__)
-    print('# GPU available:', len(tf.config.experimental.list_physical_devices('GPU')))
-    print("CUDA: {} | cuDNN: {}".format(sys_info["cuda_version"], sys_info["cudnn_version"]))
-    print(tf.config.list_physical_devices())
-    return None
 
 ############################ OPTIMIZATION ############################
 def run_BruteForce_opt(measure_type, nDataRealization=200, nMCSamples=100000, ROM_data=Earth(), ROM_obj=Earth()):
@@ -279,44 +261,58 @@ def run_BruteForce_opt(measure_type, nDataRealization=200, nMCSamples=100000, RO
     print('Minima: {:.3f} x 1e6 | Column #: {}'.format(min, minloc))
     return result_arr
 
-def run_layer_opt(measure_type, layer, time_out=1e5,
-                  nDataRealization=200, nMCSamples=100000, ROM_data=Earth(), ROM_obj=Earth(),
-                  maxiter=200, pop_size=20, parent_prop=0.2, cross_prob = 0.5, mut_prob=0.25, maxiter_no_improv=10):
-    if measure_type==1:
-        name = 'presWAT'
-    elif measure_type==2:
-        name = 'co2sl'
-    elif measure_type==3:
-        name='temp'
-    elif measure_type==4:
-        name='presWAT_co2sl'
-    else:
-        print('please select a measure type [1,4]')
-    if layer==1:
-        colbounds = [1,16]
-    elif layer==2:
-        colbounds = [16,32]
-    elif layer==3:
-        colbounds = [32,48]
-    else:
-        print('please select a layer {1,2,3}')
-    opt = FullOpt(select=0, dims=1)
-    opt.measure_type     = measure_type
-    opt.nDataRealization = nDataRealization
-    opt.nMCSamples       = nMCSamples
-    opt.ROM_data, opt.ROM_obj = ROM_data, ROM_obj
-    global_res, global_res_df = opt.global_opt(varbounds   = colbounds,
-                                               vartype     = 'int',
-                                               maxiter     = maxiter,
-                                               pop_size    = pop_size,
-                                               parent_prop = parent_prop,
-                                               elitratio   = 1/pop_size,
-                                               cross_prob  = cross_prob,
-                                               mut_prob    = mut_prob,
-                                               timeout     = time_out,
-                                               maxiter_no_improv = maxiter_no_improv)
-    np.save('global_{}_layer_{}.npy'.format(name, layer), global_res_df)
-    return global_res_df
+# def run_layer_opt(measure_type, layer, time_out=1e5,
+#                   nDataRealization=200, nMCSamples=100000, ROM_data=Earth(), ROM_obj=Earth(),
+#                   maxiter=200, pop_size=20, parent_prop=0.2, cross_prob = 0.5, mut_prob=0.25, maxiter_no_improv=10):
+#     if measure_type==1:
+#         name = 'presWAT'
+#     elif measure_type==2:
+#         name = 'co2sl'
+#     elif measure_type==3:
+#         name='temp'
+#     elif measure_type==4:
+#         name='presWAT_co2sl'
+#     else:
+#         print('please select a measure type [1,4]')
+        
+#     if layer==1:
+#         colbounds = [1,16]
+#     elif layer==2:
+#         colbounds = [16,32]
+#     elif layer==3:
+#         colbounds = [32,48]
+#     else:
+#         print('please select a layer {1,2,3}')
+        
+#     opt = FullOpt(select=0, dims=1)
+#     opt.measure_type     = measure_type
+#     opt.nDataRealization = nDataRealization
+#     opt.nMCSamples       = nMCSamples
+#     opt.ROM_data, opt.ROM_obj = ROM_data, ROM_obj
+#     global_res, global_res_df = opt.global_opt(varbounds   = colbounds,
+#                                                vartype     = 'int',
+#                                                maxiter     = maxiter,
+#                                                pop_size    = pop_size,
+#                                                parent_prop = parent_prop,
+#                                                elitratio   = 1/pop_size,
+#                                                cross_prob  = cross_prob,
+#                                                mut_prob    = mut_prob,
+#                                                timeout     = time_out,
+#                                                maxiter_no_improv = maxiter_no_improv)
+#     np.save('global_{}_layer_{}.npy'.format(name, layer), global_res_df)
+#     return global_res_df
+
+def run_layer_opt(nDataRealization=200, nMCSamples=100000, ROM_data=Earth(), ROM_obj=Earth()):
+    layer1 = np.arange(2,18)
+    layer2 = np.arange(18,34)
+    layer3 = np.arange(34,50)
+    layer_list = [layer1, layer2, layer3]
+    result = pd.DataFrame(columns=['layer 1', 'layer 2', 'layer 3'], index=['measure 1', 'measure 2', 'measure 3', 'measure 4'])
+    for m in range(4):
+        for l in range(len(layer_list)):
+            result.iloc[m,l] = Proxy(ncol_data=list(layer_list[l]), measure_type=m+1, nDataRealization=nDataRealization, 
+                                                                    nMCSamples=nMCSamples, rom_data=ROM_data, rom_obj=ROM_obj).value
+    result.to_csv('optimization_by_layer.csv')
 
 def run_column_opt(measure_type, nDataRealization=200, nMCSamples=100000, rom_data=Earth(), rom_obj=Earth()):
     if measure_type==1:
@@ -339,7 +335,7 @@ def run_column_opt(measure_type, nDataRealization=200, nMCSamples=100000, rom_da
                            nDataRealization=nDataRealization, nMCSamples=nMCSamples, 
                            rom_data=rom_data,                 rom_obj=rom_obj).value
     sol = np.array(list(results.values()))
-    np.save('column_opt_{}.npy'.format(name), sol)
+    np.save('optimization_by_column_{}.npy'.format(name), sol)
     return sol
 
 
@@ -422,24 +418,6 @@ def view_results(ext='MARS', suptitle='Results', cmap='PuBu_r', folder=None):
     plt.xticks(np.arange(4), labels=titles); plt.ylabel('Column #')
     plt.colorbar(label='uncertainty reduction [$x10^6$]')
     plt.show()
-
-############################## PROXY MODEL ##############################
-def make_proxy(reg=L1(1e-5), drop=0.2, opt='adam', loss='mse'):
-    def dense_block(inp, units):
-        _ = Dense(units, kernel_regularizer=reg)(inp)
-        _ = BatchNormalization()(_)
-        _ = PReLU()(_)
-        _ = Dropout(drop)(_)
-        return _
-    inp = Input(shape=(4))
-    x = dense_block(inp, 64)
-    x = dense_block(x, 128)
-    x = dense_block(x, 32)
-    x = dense_block(x, 16)
-    out = Dense(1, activation='tanh')(x)
-    proxy = Model(inp, out)
-    proxy.compile(optimizer=opt, loss=loss, metrics=['mse','mae'])
-    return proxy
 
 ############################## MAKE FUNCTIONS ##############################
 def read_train_sim_results(Data_Directory, MeasureType, Obj_filename, nColumn_obj, Total_time, nTimeSeries, nColumn_data, nInterval, nTrain, nParam, 
