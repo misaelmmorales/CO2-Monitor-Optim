@@ -54,7 +54,9 @@ layer_list = [layer1, layer2, layer3]
 result = pd.DataFrame(index=['layer 1', 'layer 2', 'layer 3'], columns=['measure 1', 'measure 2', 'measure 3', 'measure 4'])
 for m in range(4):
     for l in range(len(layer_list)):
-        result.iloc[l,m] = Proxy(ncol_data=list(layer_list[l]), measure_type=m+1, rom_data=LinearRegression(), rom_obj=LinearRegression(), error_option=2).value 
+        result.iloc[l,m] = Proxy(ncol_data=list(layer_list[l]), measure_type=m+1, rom_data=LinearRegression(), rom_obj=LinearRegression(), error_option=2, verbose=True).value
+        print('layer {} DONE'.format(l))
+    print('measure {} DONE'.format(m))
 result.to_csv('optimization_by_layer.csv')
 
 ### COLUMN/WELL OPTIMIZATION
@@ -66,5 +68,7 @@ wells = np.array(list(well.values()))
 results = pd.DataFrame(index=well_names, columns=['measure 1', 'measure 2', 'measure 3', 'measure 4'])
 for m in range(4):
     for i in range(16):
-        results.iloc[i,m] = Proxy(ncol_data=list(wells[i]), measure_type=m+1, rom_data=LinearRegression(), rom_obj=LinearRegression()).value
+        results.iloc[i,m] = Proxy(ncol_data=list(wells[i]), measure_type=m+1, rom_data=LinearRegression(), rom_obj=LinearRegression(), verbose=True).value
+        print('column/well {} DONE'.format(i))
+    print('measure {} DONE'.format(m))
 results.to_csv('optimizabion_by_column.csv')
