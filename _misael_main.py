@@ -50,13 +50,17 @@ templist, well = np.arange(2,50,step=16), {}
 for i in range(16):
     well[i] = templist+i
 wells = np.array(list(well.values()))
-results = pd.DataFrame(index=well_names, columns=['measure 1', 'measure 2', 'measure 3', 'measure 4'])
-for m in range(4):
-    for i in range(16):
-        results.iloc[i,m] = Proxy(ncol_data=list(wells[i]), measure_type=m+1, nMCSamples=5000, rom_data=Earth(), rom_obj=Earth(), verbose=True).value
-        print('column/well {} DONE'.format(i))
-    print('measure {} DONE'.format(m))
-results.to_csv('optimization_by_column.csv')
+measures = ['presWAT', 'co2sl', 'temp', 'presWAT_co2sl']
+result_arr = np.zeros((16,4))
+for m in range(len(measures)):
+    for w in range(wells.shape[0]):
+        result_arr[w,m] = Proxy(ncol_data=list(wells[w]), measure_type=m+1, nMCSamples=5000, 
+                                            rom_data=Earth(), rom_obj=Earth(), verbose=True).value
+        print('column {} done'.format(w))
+    print('measure {} done'.format(m))
+print('... DONE ...')
+results = pd.DataFrame(result_arr, columns=measures)
+results.to_csv('optimization_by_column.csv', index=0)
 
 #########################################################################################################
 #########################################################################################################
