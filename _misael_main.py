@@ -53,7 +53,7 @@ wells = np.array(list(well.values()))
 results = pd.DataFrame(index=well_names, columns=['measure 1', 'measure 2', 'measure 3', 'measure 4'])
 for m in range(4):
     for i in range(16):
-        results.iloc[i,m] = Proxy(ncol_data=list(wells[i]), measure_type=m+1, nMCSamples=10000, rom_data=Earth(), rom_obj=Earth(), verbose=True).value
+        results.iloc[i,m] = Proxy(ncol_data=list(wells[i]), measure_type=m+1, nMCSamples=5000, rom_data=Earth(), rom_obj=Earth(), verbose=True).value
         print('column/well {} DONE'.format(i))
     print('measure {} DONE'.format(m))
 results.to_csv('optimization_by_column.csv')
