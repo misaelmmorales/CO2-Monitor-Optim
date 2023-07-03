@@ -2,12 +2,15 @@ import numpy as np
 from uncertaintyMetric import *
 
 
-def  Uncertainty_calc(mc_data,synthetic_data,objs,err_option,eps,MeasureType,time_sensitivity,nLoc):
-    print ' Calculating uncertainty reduction'
+def  Uncertainty_calc(mc_data, synthetic_data, objs, err_option, eps, MeasureType, time_sensitivity, nLoc, verbose):   
+    if verbose:
+        print(' Calculating uncertainty reduction')
     nObj = 1 # currently we only consider one obj
+    
     array_shape = np.shape(synthetic_data)
     nDataRealization = array_shape[0]
     nDataPoint = array_shape[1]
+    
     post_p90mp10_iData = np.zeros((nDataRealization,nObj))
     post_mean_iData = np.zeros((nDataRealization,nObj))
     nSamples_remained_end = np.zeros(nDataRealization)
@@ -24,14 +27,18 @@ def  Uncertainty_calc(mc_data,synthetic_data,objs,err_option,eps,MeasureType,tim
     post_p90mp10_time = np.zeros(nStep)
     mc_obj_sum_post = []
     
-    for iDataRealization in range(0, nDataRealization):    
-        print 'Calculating uncertainty reduction assuming realization #' + str(iDataRealization+1) + ' to be true'
-        filtered_sample = Util_calc_hmerr(mc_data.T,synthetic_data[iDataRealization],err_option,eps,MeasureType,datapoint_picker,nLoc)   
+    for iDataRealization in range(0, nDataRealization):
+        if np.mod(iDataRealization,10)==0:
+            if verbose:
+                print('Calculating uncertainty reduction assuming realization #' + str(iDataRealization) + ' to be true')
+        filtered_sample = Util_calc_hmerr(mc_data.T, synthetic_data[iDataRealization], 
+                                          err_option, eps,MeasureType,
+                                          datapoint_picker, nLoc)   
     
         #  End point result
-        nSamples_remained_end[iDataRealization] = np.shape(filtered_sample[nDataPoint/nLoc-1])[0]    
+        nSamples_remained_end[iDataRealization] = np.shape(filtered_sample[int(nDataPoint/nLoc-1)])[0]    
         if nSamples_remained_end[iDataRealization]<50:
-            print 'Warning, number of samples smaller than 30, ignore realization #' + str(iDataRealization+1)
+            print('Warning, number of samples smaller than 30, ignore realization #' + str(iDataRealization+1))
             post_p90mp10_iData[iDataRealization] = -1
             post_mean_iData[iDataRealization] = -1
         else:
@@ -64,42 +71,44 @@ def  Uncertainty_calc(mc_data,synthetic_data,objs,err_option,eps,MeasureType,tim
                              
 def  Util_calc_hmerr(mc_result,obs_data,err_option,eps,MeasureType,datapoint_picker,nLoc):
     # Util_calc_hmerr
-    err = mc_result - obs_data
+    err              = mc_result - obs_data
     abs_err_unscaled = abs(err)
-    eps_vector=np.zeros(len(abs_err_unscaled.T))
-    abs_err=np.zeros_like(abs_err_unscaled)
-    nTimeSeries=int(len(eps_vector)/nLoc)
+    eps_vector       = np.zeros(len(abs_err_unscaled.T))
+    abs_err          = np.zeros_like(abs_err_unscaled)
+    nTimeSeries      = int(len(eps_vector)/nLoc)
     for i in range(0,nLoc):
-        if MeasureType==4:
-            eps_vector[i*nTimeSeries:(i+1)*nTimeSeries]=eps[i]
+        if (MeasureType==4) or (MeasureType==5) or (MeasureType==6) or (MeasureType==7):
+            eps_vector[i*nTimeSeries:(i+1)*nTimeSeries] = eps[i]
         else:
-            eps_vector[i*nTimeSeries:(i+1)*nTimeSeries]=eps
+            eps_vector[i*nTimeSeries:(i+1)*nTimeSeries] = eps
         	  
     for i in range(0,len(abs_err_unscaled)):
-        abs_err[i]=abs_err_unscaled[i]/eps_vector
-        
+        abs_err[i] = abs_err_unscaled[i]/eps_vector
+    
     filtered_sample = []
-#    if err_option == 2:  # MeanAE
-#      #  for i in range(0,len(datapoint_picker)):
-#            err_mc = mean(abs_err[datapoint_picker[i]])/len(abs_err[datapoint_picker[i]])
-#            if err_mc < eps:
-#                filtered_sample = np.where(err_mc<eps)           
-    if err_option == 3: # MaxAE
-        abs_err_v=np.zeros_like(abs_err.T)
+    
+    if err_option == 2: #MeanAE
+       for i in range(0,len(datapoint_picker)):
+           err_mc = np.mean(abs_err[datapoint_picker[i]])/len(abs_err[datapoint_picker[i]])
+           if err_mc < eps:
+               filtered_sample = np.where(err_mc<eps)  
+         
+    elif err_option == 3: # MaxAE
+        abs_err_v = np.zeros_like(abs_err.T)
         for i in range(0, len(datapoint_picker)*nLoc):
             if i%nLoc == 0:
-                abs_err_v[i] = abs_err.T[i/nLoc]
+                abs_err_v[i] = abs_err.T[int(i/nLoc)]
             elif i%nLoc == 1:
-                abs_err_v[i] = abs_err.T[len(datapoint_picker)+(i-1)/nLoc]
+                abs_err_v[i] = abs_err.T[int(len(datapoint_picker)+(i-1)/nLoc)]
             elif i%nLoc == 2:
-                abs_err_v[i] = abs_err.T[len(datapoint_picker)*2+(i-2)/nLoc]
+                abs_err_v[i] = abs_err.T[int(len(datapoint_picker)*2+(i-2)/nLoc)]
             else:
-                print 'At most three monitoring wells can be handled, for more wells, please revise the code!'
-                quit()
+                print('At most three monitoring wells can be handled, for more wells, please revise the code!')
+                exit()
         for i in range(0,len(datapoint_picker)):
-            err_mc = abs_err_v[:datapoint_picker[i]*nLoc+nLoc].max(axis=0)
+            err_mc = abs_err_v[:int(datapoint_picker[i]*nLoc+nLoc)].max(axis=0)
             filtered_sample.append(np.where(err_mc<1)[0])
     else:
-        print 'Wrong err_option'
+        print('Wrong err_option')
         
     return filtered_sample 
