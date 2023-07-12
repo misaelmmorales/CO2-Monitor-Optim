@@ -441,6 +441,14 @@ def make_proxy(reg=L1(1e-5), drop=0.2, opt='adam', loss='mse'):
     proxy.compile(optimizer=opt, loss=loss, metrics=['mse','mae'])
     return proxy
 
+def plot_loss(fit, figsize=(5,4)):
+    plt.figure(figsize=figsize)
+    plt.plot(fit.history['loss'], label='loss')
+    plt.plot(fit.history['val_loss'], label='val_loss')
+    plt.title('Training Performance'); plt.xlabel('Epochs'); plt.ylabel('Loss')
+    plt.legend()
+    plt.show()
+
 ############################## MAKE FUNCTIONS ##############################
 def read_train_sim_results(Data_Directory, MeasureType, Obj_filename, nColumn_obj, Total_time, nTimeSeries, nColumn_data, nInterval, nTrain, nParam, 
                            x_min, x_max, titles, verbose=True):
