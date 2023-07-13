@@ -199,9 +199,13 @@ class FullOpt:
 
 ###############################################################################################################################################################################
 class Proxy:
-    def __init__(self, ncol_data=7, data_dir=os.path.join(os.getcwd(),'data'), measure_type=1, obj_fname='run_co2mt.his', 
-                 ncol_obj=50, tot_time=1800, nTime=60, nIntv=1, nTrain=500, nParam=4, nMCSamples=100000, nDataRealization=200,
-                 xmin=[1e-19, 1e-19, 1e-19, 0.5], xmax=[1e-14, 1e-14, 1e-14, 2.0], error_option=3, time_sensitivity=1,
+    def __init__(self, ncol_data=7, data_dir=os.path.join(os.getcwd(),'data'), measure_type=1, 
+                 obj_fname='run_co2mt.his', 
+                 ncol_obj=50, tot_time=1800, nTime=60, nIntv=1, nTrain=500, nParam=7, 
+                 nMCSamples=100000, nDataRealization=200,
+                 xmin=[1e-19, 1e-19, 1e-19, 1e-19, 1e-19, 1e-19, 0.5],
+                 xmax=[1e-14, 1e-14, 1e-14, 1e-14, 1e-14, 1e-14, 2.0],
+                 error_option=3, time_sensitivity=1,
                  titles=['.', 'Pressure', 'CO2 Saturation (l)', 'Temperature', 'Pressure + CO2 Saturation'], 
                  rom_val=0, rom_obj=Earth(), rom_data=Earth(),
                  NN=False, verbose=False):
@@ -431,12 +435,12 @@ def make_proxy(reg=L1(1e-5), drop=0.2, opt='adam', loss='mse'):
         _ = PReLU()(_)
         _ = Dropout(drop)(_)
         return _
-    inp = Input(shape=(4))
+    inp = Input(shape=(7))
     x = dense_block(inp, 64)
     x = dense_block(x, 128)
     x = dense_block(x, 32)
     x = dense_block(x, 16)
-    out = Dense(1, activation='tanh')(x)
+    out = Dense(1, activation='linear')(x)
     proxy = Model(inp, out)
     proxy.compile(optimizer=opt, loss=loss, metrics=['mse','mae'])
     return proxy
@@ -700,10 +704,13 @@ def uncertainty_reduction(mc_obj, mc_data, ROM_data, data_train_read_raw, Measur
     def fehm(p):
         print('')
     p = matk(model=fehm)
-    p.add_par('perm4',min=x_min[0], max=x_max[0])
-    p.add_par('perm5',min=x_min[1], max=x_max[1])
-    p.add_par('perm6',min=x_min[2], max=x_max[2])
-    p.add_par('kmult',min=x_min[3], max=x_max[3])
+    p.add_par('perm4',min=x_min[0],max=x_max[0])
+    p.add_par('perm5',min=x_min[1],max=x_max[1])
+    p.add_par('perm6',min=x_min[2],max=x_max[2])
+    p.add_par('perm7',min=x_min[3],max=x_max[3])
+    p.add_par('perm8',min=x_min[4],max=x_max[4])
+    p.add_par('perm9',min=x_min[5],max=x_max[5])
+    p.add_par('kmult',min=x_min[6],max=x_max[6])
     s = p.lhs(siz=nDataRealization, seed=1000)
     LHSamples        = s.samples.values
     LHSamples_scaled = np.zeros_like(LHSamples)

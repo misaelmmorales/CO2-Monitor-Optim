@@ -22,7 +22,7 @@ nTimeSeries = 60                               # The number of measurement time 
 nInterval = 1                                  # Measurement interval, default value = 1/Month
 
 x_max = [1e-14, 1e-14, 1e-14, 1e-14, 1e-14, 1e-14, 2.0]           # Upper bounds for all the uncertain parameters
-x_min = [1e-19, 1e-19, 1e-19, 1e-19, 1e-19, 1e-19, 0.5]           # Lower bounds for all the uncertain parameters
+x_min = [1e-14, 1e-14, 1e-14, 1e-14, 1e-14, 1e-14, 2.0]         # Lower bounds for all the uncertain parameters
 nMCSamples = 100000                           # Number of monte carlo samples
 nParam = 7                                   # Number of uncertain parameters
 nDataRealization = 200                       # Number of data realizations
