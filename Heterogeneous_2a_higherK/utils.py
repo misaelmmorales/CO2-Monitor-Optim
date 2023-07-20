@@ -10,6 +10,7 @@ from scipy.optimize import minimize
 from geneticalgorithm import geneticalgorithm as ga
 import scipy.optimize as opt
 from numdifftools import Jacobian, Hessian
+from skimage.transform import rescale, resize
 
 import matplotlib.pyplot as plt
 from pyearth import Earth
