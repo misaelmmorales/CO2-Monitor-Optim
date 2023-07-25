@@ -1,0 +1,11 @@
+Figure 1: Workflow diagram for machine learning-based ROM development.
+
+Figure 2: Artificial neural network ROM overall architecture (left), and per-layer architecture (right).
+
+Figure 3: Cumulative CO2 leakage predictions from ANN ROM vs true cumulative CO2 leakage.
+
+Figure 4: Workflow diagram for optimal monitoring design.
+
+Figure 5: Schematic of the base model, in which a storage reservoir and aquifer are separated by a caprock. At the center is a CO2 injection well. The vertical axis is exaggerated 7 times.
+
+Figure 6: Log-permeability distribution of the base model. The darkest blue color corresponds to the lowest permeability, while the darkest red color corresponds to the highest. The yellow circle with an arrow indicates the CO2 injection well.
