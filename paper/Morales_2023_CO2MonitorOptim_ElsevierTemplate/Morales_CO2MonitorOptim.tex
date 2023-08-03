@@ -2,7 +2,6 @@
 \bibliographystyle{unsrtnat}
 \usepackage[sort&compress,numbers]{natbib}
 
-
 %%%Author definitions
 \def\tsc#1{\csdef{#1}{\textsc{\lowercase{#1}}\xspace}}
 \tsc{WGM}
@@ -13,54 +12,33 @@
 \tsc{DE}
 %%%
 
-% Uncomment and use as if needed
-%\newtheorem{theorem}{Theorem}
-%\newtheorem{lemma}[theorem]{Lemma}
-%\newdefinition{rmk}{Remark}
-%\newproof{pf}{Proof}
-%\newproof{pot}{Proof of Theorem \ref{thm}}
-
 \begin{document}
 \let\WriteBookmarks\relax
 \def\floatpagepagefraction{1}
 \def\textpagefraction{.001}
 
-% Short title
+% Short title and authors
 \shorttitle{}
-
-% Short author
 \shortauthors{Morales et~al.}
 
 % Main title of the paper
 \title [mode = title]{Optimal monitoring design for uncertainty quantification during geologic CO$_2$ sequestration: A machine learning approach}                      
-% Title footnote mark eg: \tnotemark[1]
 
-% First author
-% Options: Use if required
-% eg: \author[1,3]{Author Name}[type=editor,
-%       style=chinese,
-%       auid=000,
-%       bioid=1,
-%       prefix=Sir,
-%       orcid=0000-0000-0000-0000,
-%       facebook=<facebook id>,
-%       twitter=<twitter id>,
-%       linkedin=<linkedin id>,
-%       gplus=<gplus id>]
-\author[1,2]{Misael M. Morales}[]
+% Author list
+\author[1,2]{Misael M. Morales}[orcid=0000-0001-6923-1032]
 \cormark[1]
 \ead{misaelmorales@lanl.gov}
 \credit{Conceptualization of this study, Methodology, Software, Writing - Original draft preparation}
 
 % Second author
-\author[1]{Mohamed Mehana}[]
+\author[1]{Mohamed Mehana}[orcid=0000-0003-2472-2879]
 \cormark[1]
 \ead{mzm@lanl.gov}
 \credit{Conceptualization, Writing, Funding acquisition}
 
 % Third author
-\author[1]{Bailian Chen}[]
-\credit{Conceptualization, Software, Funding acquisition}
+\author[1]{Bailian Chen}[orcid=0000-0003-3655-8340]
+\credit{Conceptualization, Software, Writing Funding acquisition}
 
 % Address/affiliation
 \affiliation[1]{organization={Earth and Environmental Sciences Division, Los Alamos National Laboratory},
@@ -79,7 +57,7 @@
 
 % Here goes the abstract
 \begin{abstract}
-Geologic CO$_2$ sequestration (GCS) projects have large uncertainties in geologic properties, and require optimal monitoring designs for risk assessment and management. An effective monitoring design is crucial to ensure the safe and permanent geologic storage of CO$_2$. Optimal monitoring design involve an optimal placement of monitoring wells, and optimal monitoring measurement data (pressure, CO$_2$ saturation, temperature, etc.). We have developed a filtering-based data assimilation approach to design an optimal GCS monitoring strategy for well placement and monitoring data design. To efficiently solve the optimization problem and reduce computational costs, Artificial Neural Networks are used to develop computationally efficient reduced-order models based on full-physics numerical simulations of CO$_2$ injection in saline aquifers. We demonstrate our approach in two scenarios of CO$_2$ leakage through legacy or abandoned wellbores where an optimal monitoring strategy are devised to reduce the uncertainty in cumulative CO$_2$ leakage in the GCS site. The optimal monitoring design resulted in an uncertainty reduction in the cumulative leakage of CO$_2$ of approximately $73\%$. The proposed approach is efficient in developing monitoring designs under geologic uncertainty and enables safe geologic carbon sequestration operations.
+Geologic CO$_2$ sequestration (GCS) projects have large uncertainties in geologic properties, and require optimal monitoring designs for risk assessment and management. An effective monitoring design is crucial to ensure the safe and permanent geologic storage of CO$_2$. Optimal monitoring design involve an optimal placement of monitoring wells, and optimal monitoring measurement data (pressure, CO$_2$ saturation, temperature, etc.). We have developed a filtering-based data assimilation approach to design an optimal GCS monitoring strategy for well placement and monitoring data design. To efficiently solve the optimization problem and reduce computational costs, Artificial Neural Networks are used to develop computationally efficient reduced-order models based on full-physics numerical simulations of CO$_2$ injection in saline aquifers. We demonstrate our approach in two scenarios of CO$_2$ leakage through legacy or abandoned wellbores where an optimal monitoring strategy are devised to reduce the uncertainty in cumulative CO$_2$ leakage in the GCS site. The optimal monitoring design resulted in an uncertainty reduction in the cumulative leakage of CO$_2$ of approximately $73\%$ and $62\%$ in each case, respectively. The proposed approach is efficient in developing monitoring designs under geologic uncertainty and enables safe geologic carbon sequestration operations.
 \end{abstract}
 
 % Research highlights
@@ -315,7 +293,7 @@ For each case, the 500 training realizations are used to train ROMs for the moni
 
 With the proposed workflow, the expected uncertainty reduction of the cumulative CO$_2$ leakage can be computed for each of the 16 possible monitoring well locations, for each monitoring measurement type. For each data set, 200 possible realizations of monitoring data are generated following Step 2 in Section 2.4. To obtain the expected uncertainty reduction using Eq. (\ref{eq:3}), the prior uncertainty $U[P(M_c)]$ and posterior uncertainty $U[P(M_c \vert D^j)]$ corresponding to each possible monitoring data realization $D^j$ for each possible well location $x^p$ should be computed. Higher uncertainty reduction of the objective function indicates greater VOI in the monitoring data obtained from the optimal well location and monitoring measurement type. Through these examples, we can see that our proposed workflow can be effectively used to determine optimal CO$_2$ monitoring design from a set of alternative monitoring designs.
 
-We observe that monitoring for pressure provides the highest uncertainty reduction in general, followed by CO$_2$ saturation and lastly pressure. The spatial distribution of uncertainty reduction in CO$_2$ leakage is shown in Fig. \ref{heatmaps} for every possible well location $x^p$ in the $4 \times 4$ subgrid, and point-wise comparison of the uncertainty reduction at each monitoring well location for each measurement type is shown in Fig. \ref{point_ur}. One can observe that placing a monitoring well at location 6 and assimilation the pressure measurements provides the highest uncertainty reduction possible in the monitoring design for both Case 1 and Case 2. For Case 1, the optimal monitoring design given by $(pressure, x^6)$ yields an uncertainty reduction in the cumulative leakage of CO$_2$ of approximately 29.42$\times 10^3$ metric tons (29.24 kt), while the optimal design for CO$_2$ saturation and temperature monitoring yield an uncertainty reduction of approximately 19.34 kt and 17.71 kt, respectively. Similarly, for Case 1, the optimal monitoring design given by $(pressure, x^6)$ yields an uncertainty reduction of 26.29 kt of cumulative CO$_2$ leakage, while the optimal design for CO$_2$ saturation and temperature monitoring yield an uncertainty reduction of approximately 16.94 kt and 16.29 kt, respectively.
+We observe that monitoring for pressure provides the highest uncertainty reduction in general, followed by CO$_2$ saturation and lastly pressure. The spatial distribution of uncertainty reduction in CO$_2$ leakage is shown in Fig. \ref{heatmaps} for every possible well location $x^p$ in the $4 \times 4$ subgrid, and point-wise comparison of the uncertainty reduction at each monitoring well location for each measurement type is shown in Fig. \ref{point_ur}. One can observe that placing a monitoring well at location 6 and assimilation the pressure measurements provides the highest uncertainty reduction possible in the monitoring design for both Case 1 and Case 2. For Case 1, the optimal monitoring design given by $(pressure, x^6)$ yields an uncertainty reduction in the cumulative leakage of CO$_2$ of approximately 29.42$\times 10^3$ metric tons (29.24 kt), approximately a $73\%$ reduction. Meanwhile, the optimal design for CO$_2$ saturation and temperature monitoring yield an uncertainty reduction of approximately 19.34 kt and 17.71 kt, respectively. Similarly, for Case 2, the optimal monitoring design given by $(pressure, x^6)$ yields an uncertainty reduction of 26.29 kt of cumulative CO$_2$ leakage, a $62\%$ reduction, while the optimal design for CO$_2$ saturation and temperature monitoring yield an uncertainty reduction of approximately 16.94 kt and 16.29 kt, respectively.
 
 \begin{figure}
     \centering
@@ -331,7 +309,7 @@ We observe that monitoring for pressure provides the highest uncertainty reducti
     \label{point_ur}
 \end{figure}
 
-The histograms for the prior and posterior distributions of the objective function obtained from the data realizations 1 and 100 for Case 1 and 2, respectively, are show in Fig. \ref{ur_dist}. The prior distribution is generated using LHS from the set of uncertain input parameters, $k_V^\ell$ and $k_R$, with a uniform distribution and calculating the cumulative CO$_2$ leakage using the ROMs. The posterior distribution for two random realizations, namely realization 1 and 100, are shown. These two are selected given that they had a relatively high amount of cumulative CO$_2$ leakage. Recall that the total uncertainty reduction, $U_R$ is given by the difference between the expected posterior uncertainty (the expected value of the ensemble of realizations) and the prior uncertainty distribution. The variances of the posterior distributions calculated show significant reduction in uncertainty of cumulative CO$_2$ leakage compared to the priors. The optimal monitoring design $(pressure, x^6)$ yields a reduction in cumulative CO$_2$ leakage uncertainty of approximately 29.24 kt. 
+The histograms for the prior and posterior distributions of the objective function obtained from the data realizations 1 and 100 for Case 1 and 2, respectively, are show in Fig. \ref{ur_dist}. The prior distribution is generated using LHS from the set of uncertain input parameters, $k_V^\ell$ and $k_R$, with a uniform distribution and calculating the cumulative CO$_2$ leakage using the ROMs. The posterior distribution for two random realizations, namely realization 1 and 100, are shown. These two are selected given that they had a relatively high amount of cumulative CO$_2$ leakage. Recall that the total uncertainty reduction, $U_R$ is given by the difference between the expected posterior uncertainty (the expected value of the ensemble of realizations) and the prior uncertainty distribution. The variances of the posterior distributions calculated show significant reduction in uncertainty of cumulative CO$_2$ leakage compared to the priors. The optimal monitoring design $(pressure, x^6)$ yields a reduction in cumulative CO$_2$ leakage uncertainty of approximately 29.24 kt ($73\%$) and 26.29 kt ($62\%$) for Case 1 and Case 2, respectively. 
 
 \begin{figure}
     \centering
@@ -359,7 +337,7 @@ At a CO$_2$ storage field operation, an optimal monitoring schedule and location
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Conclusions
 \section{Conclusions}
-In this study, a workflow based on a machine learning reduced-order modeling technique and uncertainty quantification method within an optimization loop is proposed for geologic CO$_2$ sequestration monitoring design. We use the uncertainty reduction in cumulative CO$_2$ leakage as the quantity of interest to measure the potential value of monitoring measurement data. The optimal monitoring design yields an uncertainty reduction of approximately 29.94 kt in CO$_2$ leakage. The following conclusions have been drawn from this research:
+In this study, a workflow based on a machine learning reduced-order modeling technique and uncertainty quantification method within an optimization loop is proposed for geologic CO$_2$ sequestration monitoring design. We use the uncertainty reduction in cumulative CO$_2$ leakage as the quantity of interest to measure the potential value of monitoring measurement data. The optimal monitoring design yields an uncertainty reduction of approximately 29.94 kt ($73\%$) and 26.29 kt ($62\%$) in CO$_2$ leakage for Case 1 and Case 2, respectively. The following conclusions have been drawn from this research:
 \begin{enumerate}
     \item The proposed workflow can generate reasonable values of uncertainty reduction in different risk metrics at CO$_2$ storage site, including cumulative CO$_2$ leakage by utilizing different monitoring designs and has been demonstrated using a synthetic GCS project. The optimal monitoring design is obtained my assimilating pressure data at monitoring well location 6.
     
@@ -377,33 +355,24 @@ Future research in this topic includes investigating the effect of different mon
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Outro
 %\appendix
 %\section{Appendix}
-%Appendix sections are coded under \verb+\appendix+.
 
 \printcredits
 
 %% Loading bibliography style file
-%\bibliographystyle{model1-num-names}
 \bibliographystyle{cas-model2-names}
+\bibliography{references}
 
-% Loading bibliography database
-\bibliography{cas-refs}
-
-
-%\vskip3pt
-\begin{comment}
-\bio{figs/pic1}
-Author biography without author photo.
-Author biography. Author biography. Author biography.
-Author biography. Author biography. Author biography.
-Author biography. Author biography. Author biography.
-Author biography. Author biography. Author biography.
-Author biography. Author biography. Author biography.
-Author biography. Author biography. Author biography.
-Author biography. Author biography. Author biography.
-Author biography. Author biography. Author biography.
-Author biography. Author biography. Author biography.
+\bio{}
+{\bf Misael M. Morales} is a PhD student in the Hildebrand Department of Petroleum and Geosystems Engineering and a Graduate Research Assistant in the Digital Reservoir Characterization Technology and Formation Evaluation Consortia at the University of Texas at Austin. He obtained a MSc in Mathematics and BSc in Petroleum Engineering and Applied Mathematics from the University of Tulsa. His research focuses on machine learning applications for subsurface energy resource modeling, characterization, and simulation, specifically in dimensionality reduction techniques for flow forecasting, data assimilation, uncertainty quantification and optimization. 
 \endbio
-\end{comment}
+
+\bio{}
+{\bf Mohamed Mehana}, PhD, is a research scientist at the energy and natural resources security group, environmental and earth sciences division, Los Alamos National Lab. He received his PhD in petroleum engineering from the University of Oklahoma working on multiscale modeling of subsurface phenomena. His research interests include modeling and simulation of transport and interfacial phenomena at the meso/nanoscale, and leveraging machine learning capabilities to enable a predictive concurrent scale-bridging and real-time reservoir management.
+\endbio
+
+
+\bio{}
+{\bf Bailian Chen}, PhD, is a staff scientist at Los Alamos National Laboratory. His research interests include reservoir optimization (well placement/control optimization, pilot/surveillance optimization), assisted history matching, uncertainty quantification, machine learning, reduced-order modeling, and geologic carbon storage. He holds a PhD degree from The University of Tulsa, and bachelor’s and master’s degrees from the China University of Petroleum (East China), all in petroleum engineering. He has published over 30 technical papers, and delivered more than 20 presentations/invited talks at various conferences and universities. He serves as an associate editor for Journal of Petroleum Science \& Engineering and SPE Reservoir Evaluation \& Engineering.
+\endbio
 
 \end{document}
-
