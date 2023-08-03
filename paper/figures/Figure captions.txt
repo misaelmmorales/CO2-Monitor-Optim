@@ -16,6 +16,6 @@ Figure 8: Plan view (top of the aquifer) of CO$_2$ leakage at the end of 5 years
 
 Figure 9: Left: Plan view (top of the aquifer) of the uncertainty reduction obtained by all possible monitoring well locations. Top row represents Case 1 with 3 leakage pathways, and the bottom row represents Case 2 with 6 leakage pathways. Each column represents monitoring data for pressure, CO$_2$ saturation, and temperature, respectively. Right: Plan view of the reservoir permeability field with possible leakage pathways (yellow) and all possible monitoring well locations (gray).
 
-Figure 10: The point-wise calculated uncertainty reduction at each possible monitoring well location for each measurement type. The bar shows the summation of each individual measurement ($D^j$) type at each well location ($x^p$). Case 1 is shown on the left, and Case 2 on the right.
+Figure 10: The point-wise calculated uncertainty reduction at each possible monitoring well location for each measurement type. Case 1 is shown on the left, and Case 2 on the right.
 
 Figure 11: The histograms for the prior (blue) and posterior distributions obtained at the optimal monitoring design from the data realizations 1 (orange) and 100 (red) for Case 1 (left) and Case 2 (right), respectively.
