@@ -1,0 +1,21 @@
+Figure 1: Workflow diagram for machine learning-based ROM development.
+
+Figure 2: Cumulative CO$_2$ leakage prediction from ANN ROM vs true cumulative CO$_2$ leakage.
+
+Figure 3: Workflow diagram for optimal monitoring design. First, calculate the prior uncertainty with no monitoring design based on Monte Carlo samples of the FEHM simulations. Then use the pre-trained ROMs to predict CO$_2$ cumulative leakage using Monte Carlo samples and perform data assimilation of monitoring measurement $D^j$ for monitoring well placement $x^p$ to compute expected posterior uncertainty. The uncertainty reduction for case $(D^j,x^p)$ is given by $U^{x_p}[P(M_c)] - E_d[U^{x_p}[P(M_c \vert D^j]]$, and we repeat for each possible $D^j$ and $x^p$.
+
+Figure 4: Schematic of the base model, in which a storage reservoir and aquifer are separated by a caprock. At the center is a CO$_2$ injection well. The vertical axis is exaggerated 7 times.
+
+Figure 5: Log-permeability distribution of the base model. The darkest blue color corresponds to the lowest permeability, while the darkest red color corresponds to the highest. The yellow circle with an arrow indicates the CO$_2$ injection well.
+
+Figure 6: Log-permeability distribution of the base model for Case 1 (left) with 3 potential leaky pathways, and Case 2 (right) with 6 potential leaky pathways. The dark yellow circles labeled $L_i$ represent the leakage pathways, light gray circles labels $M_i$ are the possible monitoring well locations, and the yellow circle with an arrow is the CO$_2$ injection well.
+
+Figure 7: Cumulative CO$_2$ leakage over time computed for one chosen training realization in Case 1.
+
+Figure 8: Plan view (top of the aquifer) of CO$_2$ leakage at the end of 5 years of injection based on one chosen training realization in Case 1. Yellow circles indicate the potential leakage pathways. Units for CO$_2$ saturation is fraction.
+
+Figure 9: Left: Plan view (top of the aquifer) of the uncertainty reduction obtained by all possible monitoring well locations. Top row represents Case 1 with 3 leakage pathways, and the bottom row represents Case 2 with 6 leakage pathways. Each column represents monitoring data for pressure, CO$_2$ saturation, and temperature, respectively. Right: Plan view of the reservoir permeability field with possible leakage pathways (yellow) and all possible monitoring well locations (gray).
+
+Figure 10: The point-wise calculated uncertainty reduction at each possible monitoring well location for each measurement type. Case 1 is shown on the left, and Case 2 on the right.
+
+Figure 11: The histograms for the prior (blue) and posterior distributions obtained at the optimal monitoring design from the data realizations 1 (orange) and 100 (red) for Case 1 (left) and Case 2 (right), respectively.
