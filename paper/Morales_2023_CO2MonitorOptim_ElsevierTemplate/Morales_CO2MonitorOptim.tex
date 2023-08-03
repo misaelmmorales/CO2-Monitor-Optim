@@ -4,12 +4,7 @@
 
 %%%Author definitions
 \def\tsc#1{\csdef{#1}{\textsc{\lowercase{#1}}\xspace}}
-\tsc{WGM}
-\tsc{QE}
-\tsc{EP}
-\tsc{PMS}
-\tsc{BEC}
-\tsc{DE}
+\tsc{WGM} \tsc{QE} \tsc{EP} \tsc{PMS} \tsc{BEC} \tsc{DE}
 %%%
 
 \begin{document}
@@ -65,6 +60,7 @@ Geologic CO$_2$ sequestration (GCS) projects have large uncertainties in geologi
 \item Filtering-based data assimilation method is developed to perform monitoring design.
 \item Machine learning reduced-order model is used to reduce computational cost of data assimilation process.
 \item Monitoring well placement optimization is performed to reduce uncertainty and minimize leakage risks.
+
 \end{highlights}
 
 % Keywords
@@ -126,13 +122,6 @@ By selecting the optimal monitoring well placement and monitoring measurement ty
 \subsection{Reduced-Order Model Development}
 Given the computational cost of traditional filter-based data assimilation, a reduced-order model is developed in this study. The workflow for the ROM development is illustrated in Fig.\ref{mlrom} This section provides a summary of the main steps in the ROM development workflow:
 
-\begin{figure}
-    \centering
-    \includegraphics[width=16cm]{figs/Figure 1.pdf}
-    \caption{Workflow diagram for machine learning-based ROM development.}
-    \label{mlrom}
-\end{figure}
-
 \begin{enumerate}[Step 1.]
 \item \textit{Experimental design}: Given a set of uncertain parameters $k_{v}^{\ell_d}$ and $k_R$, we generate $n_s$ training samples using Latin Hypercube Sampling (LHS) \citep{Iman2008, Helton2003LatinSystems}.
 \item \textit{Forward simulations}: Physics-based HFS of CO$_2$ injection and post-injection migration is performed with each of the $n_s$ training samples using the Finite Element Heat and Mass Transfer (FEHM) simulator \citep{Zyvoloski1997}. 
@@ -140,6 +129,13 @@ Given the computational cost of traditional filter-based data assimilation, a re
 \item \textit{Train ROMs for the objectives of interest}: A reduced-order model is used to map the relationship between the training parameters inputs and outputs. We build an ensemble of ROMs, one for each objective of interest, namely the cumulative CO$_2$ leakage ($M_c$) and the simulated monitoring data ($D$) at each specified time-step. A fully-connected artificial neural network (ANN) is implemented to build the ROMs. Fig.\ref{mlrom} shows the architecture of the ANN.
 \item \textit{Validate the ROMs against the HFS}: Using 10-fold cross-validation \citep{Xu2018249}, we test the predictions from the ROMs against the HFS results in order to perform hyper-parameter tuning and obtain robust ROMs that can be used for further predictions.
 \end{enumerate}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=16cm]{figs/Figure 1.pdf}
+    \caption{Workflow diagram for machine learning-based ROM development.}
+    \label{mlrom}
+\end{figure}
 
 Using the Python TensorFlow/Keras packages \citep{tensorflow2015-whitepaper, chollet2015keras}, we develop a fully-connected ANN architecture to build the ROMs. Each ANN consists of four hidden layers with sizes $64$, $128$, $32$, and $16$, respectively, with a total number of parameters equal to $14,705$. A kernel regularizer is applied with the $\ell_1$-norm, and dropout of $10\%$ is used on each hidden layer. The activation function is the parametric rectified linear unit (PReLU), which learns the negative slope for each batch in each epoch. The Adam optimizer \citep{Kingma2014Adam} is used with a mean squared error (MSE) loss function. Training is performed on an NVIDIA RTX A$6000$ GPU in about $2$ minutes for each ROM using $10$-fold cross-validation. The average validation MSE is approximately $8.5\times10^{-4}$ and the correlation coefficient ($R^2$) is approximately $0.98$. The truth vs. prediction performance for a set of $500$ realizations of uncertain parameters is shown in Fig.\ref{rom_train}.
 
@@ -262,12 +258,12 @@ We choose one simulation from the 500 training realizations in Case 1 to show wh
     \midrule
     CO$_2$ injection rate & 3.17 & kg/s \\
     Thickness of caprock layer & 30 & m \\
-    Permeability of 1$^st$ potential leakage pathway & $2.19\times 10^-{17}$ & $m^2$ \\
-    Permeability of 2$^nd$ potential leakage pathway & $3.37\times 10^-{17}$ & $m^2$ \\
-    Permeability of 3$^rd$ potential leakage pathway & $2.97\times 10^-{16}$ & $m^2$ \\
-    Distance between injector and 1$^st$ potential leakage pathway & 424.3 & m \\
-    Distance between injector and 2$^nd$ potential leakage pathway & 360.6 & m \\
-    Distance between injector and 3$^rd$ potential leakage pathway & 141.4 & m \\
+    Permeability of 1$^{st}$ potential leakage pathway & $2.19\times 10^-{17}$ & $m^2$ \\
+    Permeability of 2$^{nd}$ potential leakage pathway & $3.37\times 10^-{17}$ & $m^2$ \\
+    Permeability of 3$^{rd}$ potential leakage pathway & $2.97\times 10^-{16}$ & $m^2$ \\
+    Distance between injector and 1$^{st}$ potential leakage pathway & 424.3 & m \\
+    Distance between injector and 2$^{nd}$ potential leakage pathway & 360.6 & m \\
+    Distance between injector and 3$^{rd}$ potential leakage pathway & 141.4 & m \\
     Permeability for aquifer layer & $1\times 10^{-13}$ & $m^2$ \\
     Permeability for caprock layer & $1\times 10^{-19}$ & $m^2$  \\
     Reservoir permeability multiplier & 1.88 & $-$   \\  
@@ -293,7 +289,7 @@ For each case, the 500 training realizations are used to train ROMs for the moni
 
 With the proposed workflow, the expected uncertainty reduction of the cumulative CO$_2$ leakage can be computed for each of the 16 possible monitoring well locations, for each monitoring measurement type. For each data set, 200 possible realizations of monitoring data are generated following Step 2 in Section 2.4. To obtain the expected uncertainty reduction using Eq. (\ref{eq:3}), the prior uncertainty $U[P(M_c)]$ and posterior uncertainty $U[P(M_c \vert D^j)]$ corresponding to each possible monitoring data realization $D^j$ for each possible well location $x^p$ should be computed. Higher uncertainty reduction of the objective function indicates greater VOI in the monitoring data obtained from the optimal well location and monitoring measurement type. Through these examples, we can see that our proposed workflow can be effectively used to determine optimal CO$_2$ monitoring design from a set of alternative monitoring designs.
 
-We observe that monitoring for pressure provides the highest uncertainty reduction in general, followed by CO$_2$ saturation and lastly pressure. The spatial distribution of uncertainty reduction in CO$_2$ leakage is shown in Fig. \ref{heatmaps} for every possible well location $x^p$ in the $4 \times 4$ subgrid, and point-wise comparison of the uncertainty reduction at each monitoring well location for each measurement type is shown in Fig. \ref{point_ur}. One can observe that placing a monitoring well at location 6 and assimilation the pressure measurements provides the highest uncertainty reduction possible in the monitoring design for both Case 1 and Case 2. For Case 1, the optimal monitoring design given by $(pressure, x^6)$ yields an uncertainty reduction in the cumulative leakage of CO$_2$ of approximately 29.42$\times 10^3$ metric tons (29.24 kt), approximately a $73\%$ reduction. Meanwhile, the optimal design for CO$_2$ saturation and temperature monitoring yield an uncertainty reduction of approximately 19.34 kt and 17.71 kt, respectively. Similarly, for Case 2, the optimal monitoring design given by $(pressure, x^6)$ yields an uncertainty reduction of 26.29 kt of cumulative CO$_2$ leakage, a $62\%$ reduction, while the optimal design for CO$_2$ saturation and temperature monitoring yield an uncertainty reduction of approximately 16.94 kt and 16.29 kt, respectively.
+We observe that monitoring for pressure provides the highest uncertainty reduction in general, followed by CO$_2$ saturation and lastly pressure. The spatial distribution of uncertainty reduction in CO$_2$ leakage is shown in Fig. \ref{heatmaps} for every possible well location $x^p$ in the $4 \times 4$ subgrid, and point-wise comparison of the uncertainty reduction at each monitoring well location for each measurement type is shown in Fig. \ref{point_ur}. One can observe that placing a monitoring well at location 6 and assimilation the pressure measurements provides the highest uncertainty reduction possible in the monitoring design for both Case 1 and Case 2. For Case 1, the optimal monitoring design given by $(pressure, 6)$ yields an uncertainty reduction in the cumulative leakage of CO$_2$ of approximately 29.42$\times 10^3$ metric tons (29.24 kt), approximately a $73\%$ reduction. Meanwhile, the optimal design for CO$_2$ saturation and temperature monitoring yield an uncertainty reduction of approximately 19.34 kt and 17.71 kt, respectively. Similarly, for Case 2, the optimal monitoring design given by $(pressure, 6)$ yields an uncertainty reduction of 26.29 kt of cumulative CO$_2$ leakage, a $62\%$ reduction, while the optimal design for CO$_2$ saturation and temperature monitoring yield an uncertainty reduction of approximately 16.94 kt and 16.29 kt, respectively.
 
 \begin{figure}
     \centering
@@ -309,7 +305,7 @@ We observe that monitoring for pressure provides the highest uncertainty reducti
     \label{point_ur}
 \end{figure}
 
-The histograms for the prior and posterior distributions of the objective function obtained from the data realizations 1 and 100 for Case 1 and 2, respectively, are show in Fig. \ref{ur_dist}. The prior distribution is generated using LHS from the set of uncertain input parameters, $k_V^\ell$ and $k_R$, with a uniform distribution and calculating the cumulative CO$_2$ leakage using the ROMs. The posterior distribution for two random realizations, namely realization 1 and 100, are shown. These two are selected given that they had a relatively high amount of cumulative CO$_2$ leakage. Recall that the total uncertainty reduction, $U_R$ is given by the difference between the expected posterior uncertainty (the expected value of the ensemble of realizations) and the prior uncertainty distribution. The variances of the posterior distributions calculated show significant reduction in uncertainty of cumulative CO$_2$ leakage compared to the priors. The optimal monitoring design $(pressure, x^6)$ yields a reduction in cumulative CO$_2$ leakage uncertainty of approximately 29.24 kt ($73\%$) and 26.29 kt ($62\%$) for Case 1 and Case 2, respectively. 
+The histograms for the prior and posterior distributions of the objective function obtained from the data realizations 1 and 100 for Case 1 and 2, respectively, are show in Fig. \ref{ur_dist}. The prior distribution is generated using LHS from the set of uncertain input parameters, $k_V^\ell$ and $k_R$, with a uniform distribution and calculating the cumulative CO$_2$ leakage using the ROMs. The posterior distribution for two random realizations, namely realization 1 and 100, are shown. These two are selected given that they had a relatively high amount of cumulative CO$_2$ leakage. Recall that the total uncertainty reduction, $U_R$ is given by the difference between the expected posterior uncertainty (the expected value of the ensemble of realizations) and the prior uncertainty distribution. The variances of the posterior distributions calculated show significant reduction in uncertainty of cumulative CO$_2$ leakage compared to the priors. The optimal monitoring design $(pressure, 6)$ yields a reduction in cumulative CO$_2$ leakage uncertainty of approximately 29.24 kt ($73\%$) and 26.29 kt ($62\%$) for Case 1 and Case 2, respectively. 
 
 \begin{figure}
     \centering
@@ -376,3 +372,24 @@ Future research in this topic includes investigating the effect of different mon
 \endbio
 
 \end{document}
+
+
+\begin{comment}
+\vspace{2cm}
+Dear Editors of Applied Energy:
+
+We wish to submit an article entitled "\textbf {Optimal Monitoring Design for Uncertainty Quantification during Geologic CO$_2$ Sequestration: A Machine Learning Approach}" for consideration in \textit{Applied Energy}. We confirm this work is original and has not been published elsewhere, nor is it currently considered for publication elsewhere. In this paper, we propose a novel workflow to efficiently and accurately quantify the uncertainty in cumulative CO$_2$ leakage during geologic carbon sequestration (GCS). We developed a robust reduced-order models (ROMs) using artificial neural networks (ANNs) to based on comprehensive high-fidelity reservoir simulation data sets. We then apply a filter-based data assimilation procedure to integrate different types of monitoring measurements from variable monitoring well locations, and quantify the uncertainty reduction in each combination. The optimal solution is then obtained as the best monitoring well placement and monitoring measurement type based on the predicted and assimilated data. The workflow provides accurate forecasts for the cumulative CO$_2$ leakage under uncertain geologic parameters.
+
+We selected the \textit{Applied Energy} to publish this manuscript since the work aligns well with the Journal's aim and scope on environmentally sustainable exploration, storage, and utilization of CO$_2$ sources to support energy transition and net-zero carbon goals. Our goal is to provide the energy transition pathway from fossil fuels to decarbonize the economy and provide an environmentally sustainable future.
+
+We have no conflict of interest to disclose. We appreciate your time and effort in reviewing our work. Please address all correspondence concerning this manuscript to Mohamed Mehana at \href{mailto:mzm@lanl.gov}{mzm@lanl.gov}. Thank you for your consideration of this manuscript. We look forward to hearing from you.
+
+\vspace{1cm}
+Sincerely, \\
+\textbf{Mohamed Mehana} \\
+Scientist \\
+Energy and Natural Resources Security (EES-16) \\
+\textbf{Los Alamos National Laboratory} \href{http://lanl.gov}{lanl.gov} \\
+Office: 505-665-7846 \\
+Email: \href{mailto:mzm@lanl.gov}{mzm@lanl.gov} 
+\end{comment}
